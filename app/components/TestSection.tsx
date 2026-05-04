@@ -29,8 +29,7 @@ type ModelState = {
 const TIER_META: Record<TierKey, { title: string; subtitle: string }> = {
   tts: {
     title: "Text-to-speech models",
-    subtitle:
-      "Hear how 4 leading AI voice models pronounce your brand",
+    subtitle: "Hear how 4 leading AI voice models pronounce your brand",
   },
   video: {
     title: "AI video models",
@@ -124,13 +123,13 @@ export function TestSection({ initialBrand }: { initialBrand?: string }) {
   const ttsLoading = TIERS_META.tts.some((m) => states[m.id]?.loading);
 
   return (
-    <div id="test" className="w-full max-w-3xl mx-auto px-6">
+    <div id="test" className="w-full max-w-5xl mx-auto px-6">
       <form
         onSubmit={(e) => {
           e.preventDefault();
           runFresh(brand);
         }}
-        className="flex flex-col sm:flex-row gap-3"
+        className="flex flex-col sm:flex-row gap-3 max-w-3xl mx-auto"
       >
         <input
           type="text"
@@ -145,9 +144,15 @@ export function TestSection({ initialBrand }: { initialBrand?: string }) {
           disabled={ttsLoading || brand.trim().length === 0}
           className="rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-violet-500/30 transition hover:shadow-violet-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {ttsLoading ? "Testing…" : "Test it"}
+          {ttsLoading ? "Testing…" : "Test it free"}
         </button>
       </form>
+
+      {!activeBrand && (
+        <p className="mt-4 text-center text-xs text-zinc-500">
+          ✓ No signup &nbsp; ✓ 4 voice models &nbsp; ✓ Results in ~7 seconds
+        </p>
+      )}
 
       {activeBrand && (
         <div className="mt-12 space-y-12">
@@ -156,9 +161,8 @@ export function TestSection({ initialBrand }: { initialBrand?: string }) {
           {triggered.video ? (
             <TierBlock tier="video" brand={activeBrand} states={states} />
           ) : (
-            <NextTierCta
-              tier="video"
-              onClick={() =>
+            <LockedVideoTier
+              onUnlock={() =>
                 aborterRef.current &&
                 runTier("video", activeBrand, aborterRef.current.signal)
               }
@@ -196,7 +200,7 @@ function TierBlock({
 
       <p className="text-xs text-zinc-500 mb-4">
         Listening to{" "}
-        <span className="font-mono text-zinc-300">"{phrase}"</span>
+        <span className="font-mono text-zinc-300">&quot;{phrase}&quot;</span>
       </p>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
@@ -208,35 +212,89 @@ function TierBlock({
   );
 }
 
-function NextTierCta({
-  tier,
-  onClick,
-}: {
-  tier: TierKey;
-  onClick: () => void;
-}) {
-  const meta = TIER_META[tier];
-  const models = TIERS_META[tier];
-  const maxEta = Math.max(...models.map((m) => m.estimatedSeconds));
+function LockedVideoTier({ onUnlock }: { onUnlock: () => void }) {
+  const meta = TIER_META.video;
+  const models = TIERS_META.video;
 
   return (
-    <button
-      onClick={onClick}
-      className="w-full rounded-xl border border-dashed border-zinc-800 bg-zinc-950 p-6 text-left transition hover:border-fuchsia-500/50 hover:bg-zinc-900/50"
+    <div className="relative">
+      <div className="mb-5">
+        <div className="flex items-baseline justify-between gap-3">
+          <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+            <LockIcon /> {meta.title}
+          </h3>
+          <span className="text-xs text-zinc-500">~45s</span>
+        </div>
+        <p className="text-sm text-zinc-500 mt-1">{meta.subtitle}</p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 opacity-60">
+        {models.map((m) => (
+          <LockedCard key={m.id} model={m} />
+        ))}
+      </div>
+
+      <div className="mt-6 rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 p-6 text-center">
+        <h4 className="text-lg font-semibold text-white">
+          Unlock 4 AI video spokespersons saying your brand
+        </h4>
+        <p className="mt-2 text-sm text-zinc-400 max-w-md mx-auto">
+          Veo 3.1, Seedance 2.0, Kling v3 and Happy Horse 1.0 — all generating
+          synchronized audio so you can hear *and* see how AI says your brand.
+        </p>
+        <div className="mt-5 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <button
+            onClick={onUnlock}
+            className="rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 px-7 py-3 text-base font-semibold text-white shadow-lg shadow-violet-500/30 transition hover:shadow-violet-500/50"
+          >
+            Unlock for 9,90€
+          </button>
+          <a
+            href="#pricing"
+            className="text-sm text-zinc-400 hover:text-white transition"
+          >
+            or save with Pro pack →
+          </a>
+        </div>
+        <p className="mt-4 text-[11px] text-zinc-600">
+          Free preview during launch · payment activates with V1
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function LockedCard({ model }: { model: ModelMeta }) {
+  return (
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-5">
+      <div className="flex items-center gap-2 text-sm text-zinc-500">
+        <span className="text-base">{model.flag}</span>
+        <span>{model.provider}</span>
+      </div>
+      <div className="mt-1 font-semibold text-zinc-400">{model.name}</div>
+      <div className="mt-4 min-h-[60px] flex items-center justify-center rounded-lg border border-dashed border-zinc-800 bg-zinc-950/50 text-zinc-600">
+        <LockIcon />
+      </div>
+    </div>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="inline"
     >
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <div className="font-semibold text-white">{meta.title}</div>
-          <div className="text-sm text-zinc-500 mt-1">{meta.subtitle}</div>
-        </div>
-        <div className="text-fuchsia-400 text-sm font-medium shrink-0">
-          Run this test →
-        </div>
-      </div>
-      <div className="mt-3 text-xs text-zinc-600">
-        {models.length} models · ~{maxEta}s estimated
-      </div>
-    </button>
+      <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
   );
 }
 
