@@ -52,6 +52,8 @@ const runModel = async (
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
+    const body = (err as { body?: unknown })?.body;
+    const detail = body ? JSON.stringify(body).slice(0, 200) : null;
     return {
       id: model.id,
       name: model.name,
@@ -59,7 +61,7 @@ const runModel = async (
       flag: model.flag,
       type: model.type,
       mediaUrl: null,
-      error: message,
+      error: detail ? `${message} — ${detail}` : message,
     };
   }
 };
