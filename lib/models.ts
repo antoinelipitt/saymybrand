@@ -126,6 +126,20 @@ export const TIER_3_VIDEO: ModelConfig[] = [
     extractMediaUrl: getMediaUrl,
   },
   {
+    id: "kling-v3-standard",
+    endpoint: "fal-ai/kling-video/v3/standard/text-to-video",
+    name: "Kling v3 Standard",
+    provider: "Kuaishou",
+    flag: "🇨🇳",
+    type: "video",
+    buildInput: (text) => ({
+      prompt: videoPrompt(text),
+      duration: "5",
+      generate_audio: true,
+    }),
+    extractMediaUrl: getMediaUrl,
+  },
+  {
     id: "happy-horse-1.0",
     endpoint: "alibaba/happy-horse/text-to-video",
     name: "Happy Horse 1.0",
