@@ -1,16 +1,17 @@
 import { NextResponse } from "next/server";
 import { getFalClient } from "@/lib/fal";
-import { TTS_MODELS, type ModelConfig } from "@/lib/models";
+import { TIERS, type ModelConfig, type TierKey } from "@/lib/models";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 type ModelResult = {
   id: string;
   name: string;
   provider: string;
   flag: string;
-  audioUrl: string | null;
+  type: "audio" | "video";
+  mediaUrl: string | null;
   error: string | null;
 };
 
@@ -21,6 +22,9 @@ const sanitizeBrand = (input: unknown): string | null => {
   return trimmed;
 };
 
+const isTierKey = (input: unknown): input is TierKey =>
+  typeof input === "string" && input in TIERS;
+
 const runModel = async (
   model: ModelConfig,
   prompt: string
@@ -30,14 +34,15 @@ const runModel = async (
     const result = await fal.subscribe(model.endpoint, {
       input: model.buildInput(prompt),
     });
-    const audioUrl = model.extractAudioUrl(result.data);
+    const mediaUrl = model.extractMediaUrl(result.data);
     return {
       id: model.id,
       name: model.name,
       provider: model.provider,
       flag: model.flag,
-      audioUrl,
-      error: audioUrl ? null : "No audio URL in response",
+      type: model.type,
+      mediaUrl,
+      error: mediaUrl ? null : "No media URL in response",
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
@@ -46,7 +51,8 @@ const runModel = async (
       name: model.name,
       provider: model.provider,
       flag: model.flag,
-      audioUrl: null,
+      type: model.type,
+      mediaUrl: null,
       error: message,
     };
   }
@@ -55,6 +61,7 @@ const runModel = async (
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const brand = sanitizeBrand(body?.brand);
+  const tier: TierKey = isTierKey(body?.tier) ? body.tier : "top3";
 
   if (!brand) {
     return NextResponse.json(
@@ -64,9 +71,10 @@ export async function POST(req: Request) {
   }
 
   const prompt = `Welcome to ${brand}.`;
+  const models = TIERS[tier];
   const results = await Promise.all(
-    TTS_MODELS.map((model) => runModel(model, prompt))
+    models.map((model) => runModel(model, prompt))
   );
 
-  return NextResponse.json({ brand, prompt, results });
+  return NextResponse.json({ brand, prompt, tier, results });
 }
