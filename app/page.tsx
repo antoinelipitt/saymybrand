@@ -51,7 +51,7 @@ export default function Home() {
           />
           <Feature
             title="Multi-model"
-            body="MiniMax, Resemble, Inworld today. Veo 3.1, Seedance and Happy Horse coming with video soon."
+            body="ElevenLabs, Gemini Flash and MiniMax for voice. Veo 3.1, Seedance and Happy Horse for video. All on fal.ai."
           />
           <Feature
             title="Honest"

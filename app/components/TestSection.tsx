@@ -31,8 +31,8 @@ const initialTierState: TierState = { loading: false, data: null, error: null };
 
 const TIER_META: Record<TierKey, { title: string; subtitle: string; eta: string }> = {
   top3: {
-    title: "Top 3 multilingual TTS",
-    subtitle: "Most-used multilingual TTS available on fal.ai",
+    title: "Top 3 TTS models in the world",
+    subtitle: "ElevenLabs, Gemini Flash and MiniMax — the leaders",
     eta: "~10s",
   },
   more: {

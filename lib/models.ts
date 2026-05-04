@@ -38,6 +38,16 @@ const ttsInput = (text: string) => ({ text });
 
 export const TIER_1_TOP3: ModelConfig[] = [
   {
+    id: "elevenlabs-v3",
+    endpoint: "fal-ai/elevenlabs/tts/eleven-v3",
+    name: "ElevenLabs v3",
+    provider: "ElevenLabs",
+    flag: "🇺🇸",
+    type: "audio",
+    buildInput: ttsInput,
+    extractMediaUrl: getMediaUrl,
+  },
+  {
     id: "gemini-flash-tts",
     endpoint: "fal-ai/gemini-3.1-flash-tts",
     name: "Gemini 3.1 Flash TTS",
@@ -57,6 +67,9 @@ export const TIER_1_TOP3: ModelConfig[] = [
     buildInput: (text) => ({ text, voice_setting: { voice_id: "Wise_Woman" } }),
     extractMediaUrl: getMediaUrl,
   },
+];
+
+export const TIER_2_MORE: ModelConfig[] = [
   {
     id: "inworld-tts",
     endpoint: "fal-ai/inworld-tts",
@@ -67,9 +80,6 @@ export const TIER_1_TOP3: ModelConfig[] = [
     buildInput: ttsInput,
     extractMediaUrl: getMediaUrl,
   },
-];
-
-export const TIER_2_MORE: ModelConfig[] = [
   {
     id: "chatterbox",
     endpoint: "fal-ai/chatterbox/text-to-speech",
