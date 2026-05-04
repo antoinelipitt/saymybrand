@@ -118,9 +118,9 @@ export const TIER_3_VIDEO: ModelConfig[] = [
     extractMediaUrl: getMediaUrl,
   },
   {
-    id: "seedance-2.0",
-    endpoint: "bytedance/seedance-2.0/text-to-video",
-    name: "Seedance 2.0",
+    id: "seedance-2.0-fast",
+    endpoint: "bytedance/seedance-2.0/fast/text-to-video",
+    name: "Seedance 2.0 Fast",
     provider: "ByteDance",
     flag: "🇨🇳",
     type: "video",
