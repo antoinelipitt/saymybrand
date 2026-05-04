@@ -1,12 +1,6 @@
 import { NextResponse } from "next/server";
 import { getFalClient } from "@/lib/fal";
-import {
-  TIERS,
-  ttsPhrase,
-  videoPhrase,
-  type ModelConfig,
-  type TierKey,
-} from "@/lib/models";
+import { findModelById, type ModelConfig } from "@/lib/models";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -27,9 +21,6 @@ const sanitizeBrand = (input: unknown): string | null => {
   if (trimmed.length === 0 || trimmed.length > 50) return null;
   return trimmed;
 };
-
-const isTierKey = (input: unknown): input is TierKey =>
-  typeof input === "string" && input in TIERS;
 
 const runModel = async (
   model: ModelConfig,
@@ -69,7 +60,7 @@ const runModel = async (
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const brand = sanitizeBrand(body?.brand);
-  const tier: TierKey = isTierKey(body?.tier) ? body.tier : "top3";
+  const modelId = typeof body?.modelId === "string" ? body.modelId : null;
 
   if (!brand) {
     return NextResponse.json(
@@ -77,12 +68,21 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
+  if (!modelId) {
+    return NextResponse.json(
+      { error: "Missing modelId in request body." },
+      { status: 400 }
+    );
+  }
 
-  const prompt = tier === "video" ? videoPhrase(brand) : ttsPhrase(brand);
-  const models = TIERS[tier];
-  const results = await Promise.all(
-    models.map((model) => runModel(model, brand))
-  );
+  const model = findModelById(modelId);
+  if (!model) {
+    return NextResponse.json(
+      { error: `Unknown modelId: ${modelId}` },
+      { status: 404 }
+    );
+  }
 
-  return NextResponse.json({ brand, prompt, tier, results });
+  const result = await runModel(model, brand);
+  return NextResponse.json({ result });
 }

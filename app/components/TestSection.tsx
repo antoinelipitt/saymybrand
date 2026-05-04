@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import {
+  TIERS_META,
+  ttsPhrase,
+  videoPhrase,
+  type ModelMeta,
+  type TierKey,
+} from "@/lib/models";
 
 type ModelResult = {
   id: string;
@@ -12,83 +19,113 @@ type ModelResult = {
   error: string | null;
 };
 
-type TierKey = "top3" | "more" | "video";
-
-type TestResponse = {
-  brand: string;
-  prompt: string;
-  tier: TierKey;
-  results: ModelResult[];
-};
-
-type TierState = {
+type ModelState = {
   loading: boolean;
-  data: TestResponse | null;
+  startedAt: number | null;
+  result: ModelResult | null;
   error: string | null;
 };
 
-const initialTierState: TierState = { loading: false, data: null, error: null };
-
-const TIER_META: Record<TierKey, { title: string; subtitle: string; eta: string }> = {
+const TIER_META: Record<TierKey, { title: string; subtitle: string }> = {
   top3: {
     title: "Top 3 TTS models in the world",
     subtitle: "ElevenLabs, Gemini Flash and MiniMax — the leaders",
-    eta: "~10s",
   },
   more: {
     title: "More TTS models",
     subtitle: "Other multilingual TTS worth a listen",
-    eta: "~10s",
   },
   video: {
     title: "AI video models",
     subtitle: "Watch a spokesperson say your brand",
-    eta: "30–60s",
   },
 };
 
 export function TestSection({ initialBrand }: { initialBrand?: string }) {
   const [brand, setBrand] = useState(initialBrand ?? "");
   const [activeBrand, setActiveBrand] = useState<string | null>(null);
-  const [tiers, setTiers] = useState<Record<TierKey, TierState>>({
-    top3: initialTierState,
-    more: initialTierState,
-    video: initialTierState,
+  const [states, setStates] = useState<Record<string, ModelState>>({});
+  const [triggered, setTriggered] = useState<Record<TierKey, boolean>>({
+    top3: false,
+    more: false,
+    video: false,
   });
+  const aborterRef = useRef<AbortController | null>(null);
 
-  const runTier = async (target: string, tier: TierKey) => {
-    const trimmed = target.trim();
-    if (!trimmed) return;
-
-    setTiers((prev) => ({ ...prev, [tier]: { loading: true, data: null, error: null } }));
+  const runModel = async (
+    modelId: string,
+    targetBrand: string,
+    signal: AbortSignal
+  ) => {
+    const startedAt = Date.now();
+    setStates((prev) => ({
+      ...prev,
+      [modelId]: { loading: true, startedAt, result: null, error: null },
+    }));
 
     try {
       const res = await fetch("/api/test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ brand: trimmed, tier }),
+        body: JSON.stringify({ brand: targetBrand, modelId }),
+        signal,
       });
+      if (signal.aborted) return;
+
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error ?? `Request failed (${res.status})`);
+        throw new Error(j.error ?? `HTTP ${res.status}`);
       }
-      const json = (await res.json()) as TestResponse;
-      setTiers((prev) => ({ ...prev, [tier]: { loading: false, data: json, error: null } }));
+
+      const json = (await res.json()) as { result: ModelResult };
+      if (signal.aborted) return;
+
+      setStates((prev) => ({
+        ...prev,
+        [modelId]: {
+          loading: false,
+          startedAt,
+          result: json.result,
+          error: null,
+        },
+      }));
     } catch (e) {
+      if (signal.aborted) return;
       const message = e instanceof Error ? e.message : "Unexpected error";
-      setTiers((prev) => ({ ...prev, [tier]: { loading: false, data: null, error: message } }));
+      setStates((prev) => ({
+        ...prev,
+        [modelId]: { loading: false, startedAt, result: null, error: message },
+      }));
     }
   };
 
+  const runTier = (tier: TierKey, targetBrand: string, signal: AbortSignal) => {
+    setTriggered((prev) => ({ ...prev, [tier]: true }));
+    TIERS_META[tier].forEach((model) => {
+      runModel(model.id, targetBrand, signal);
+    });
+  };
+
   const runFresh = (target: string) => {
-    setActiveBrand(target.trim());
-    setTiers({ top3: initialTierState, more: initialTierState, video: initialTierState });
-    runTier(target, "top3");
+    const trimmed = target.trim();
+    if (!trimmed) return;
+
+    aborterRef.current?.abort();
+    const ctrl = new AbortController();
+    aborterRef.current = ctrl;
+
+    setActiveBrand(trimmed);
+    setStates({});
+    setTriggered({ top3: false, more: false, video: false });
+    runTier("top3", trimmed, ctrl.signal);
   };
 
   useEffect(() => {
     if (initialBrand) runFresh(initialBrand);
+    return () => aborterRef.current?.abort();
   }, [initialBrand]);
+
+  const tier1Loading = TIERS_META.top3.some((m) => states[m.id]?.loading);
 
   return (
     <div id="test" className="w-full max-w-3xl mx-auto px-6">
@@ -109,35 +146,39 @@ export function TestSection({ initialBrand }: { initialBrand?: string }) {
         />
         <button
           type="submit"
-          disabled={tiers.top3.loading || brand.trim().length === 0}
+          disabled={tier1Loading || brand.trim().length === 0}
           className="rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-violet-500/30 transition hover:shadow-violet-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {tiers.top3.loading ? "Testing…" : "Test it"}
+          {tier1Loading ? "Testing…" : "Test it"}
         </button>
       </form>
 
       {activeBrand && (
         <div className="mt-12 space-y-12">
-          <TierBlock tier="top3" state={tiers.top3} />
+          <TierBlock tier="top3" brand={activeBrand} states={states} />
 
-          {tiers.top3.data && !tiers.more.data && !tiers.more.loading && (
+          {triggered.more ? (
+            <TierBlock tier="more" brand={activeBrand} states={states} />
+          ) : (
             <NextTierCta
               tier="more"
-              onClick={() => activeBrand && runTier(activeBrand, "more")}
+              onClick={() =>
+                aborterRef.current &&
+                runTier("more", activeBrand, aborterRef.current.signal)
+              }
             />
-          )}
-          {(tiers.more.loading || tiers.more.data || tiers.more.error) && (
-            <TierBlock tier="more" state={tiers.more} />
           )}
 
-          {tiers.top3.data && !tiers.video.data && !tiers.video.loading && (
+          {triggered.video ? (
+            <TierBlock tier="video" brand={activeBrand} states={states} />
+          ) : (
             <NextTierCta
               tier="video"
-              onClick={() => activeBrand && runTier(activeBrand, "video")}
+              onClick={() =>
+                aborterRef.current &&
+                runTier("video", activeBrand, aborterRef.current.signal)
+              }
             />
-          )}
-          {(tiers.video.loading || tiers.video.data || tiers.video.error) && (
-            <TierBlock tier="video" state={tiers.video} />
           )}
         </div>
       )}
@@ -145,46 +186,55 @@ export function TestSection({ initialBrand }: { initialBrand?: string }) {
   );
 }
 
-function TierBlock({ tier, state }: { tier: TierKey; state: TierState }) {
+function TierBlock({
+  tier,
+  brand,
+  states,
+}: {
+  tier: TierKey;
+  brand: string;
+  states: Record<string, ModelState>;
+}) {
   const meta = TIER_META[tier];
+  const models = TIERS_META[tier];
+  const phrase = tier === "video" ? videoPhrase(brand) : ttsPhrase(brand);
+  const maxEta = Math.max(...models.map((m) => m.estimatedSeconds));
 
   return (
     <div>
       <div className="mb-5">
         <div className="flex items-baseline justify-between gap-3">
           <h3 className="text-xl font-semibold text-white">{meta.title}</h3>
-          <span className="text-xs text-zinc-500">{meta.eta}</span>
+          <span className="text-xs text-zinc-500">~{maxEta}s</span>
         </div>
         <p className="text-sm text-zinc-500 mt-1">{meta.subtitle}</p>
       </div>
 
-      {state.loading && <Loading tier={tier} />}
+      <p className="text-xs text-zinc-500 mb-4">
+        Listening to{" "}
+        <span className="font-mono text-zinc-300">"{phrase}"</span>
+      </p>
 
-      {state.error && (
-        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-red-300 text-sm">
-          {state.error}
-        </div>
-      )}
-
-      {state.data && (
-        <>
-          <p className="text-xs text-zinc-500 mb-4">
-            Listening to{" "}
-            <span className="font-mono text-zinc-300">"{state.data.prompt}"</span>
-          </p>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {state.data.results.map((r) => (
-              <ResultCard key={r.id} result={r} />
-            ))}
-          </div>
-        </>
-      )}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {models.map((m) => (
+          <ResultCard key={m.id} model={m} state={states[m.id]} />
+        ))}
+      </div>
     </div>
   );
 }
 
-function NextTierCta({ tier, onClick }: { tier: TierKey; onClick: () => void }) {
+function NextTierCta({
+  tier,
+  onClick,
+}: {
+  tier: TierKey;
+  onClick: () => void;
+}) {
   const meta = TIER_META[tier];
+  const models = TIERS_META[tier];
+  const maxEta = Math.max(...models.map((m) => m.estimatedSeconds));
+
   return (
     <button
       onClick={onClick}
@@ -199,54 +249,111 @@ function NextTierCta({ tier, onClick }: { tier: TierKey; onClick: () => void }) 
           Run this test →
         </div>
       </div>
-      <div className="mt-3 text-xs text-zinc-600">Estimated wait: {meta.eta}</div>
+      <div className="mt-3 text-xs text-zinc-600">
+        {models.length} models · ~{maxEta}s estimated
+      </div>
     </button>
   );
 }
 
-function Loading({ tier }: { tier: TierKey }) {
-  return (
-    <div className="flex items-center gap-3 text-zinc-400 py-4">
-      <div className="h-2 w-2 animate-pulse rounded-full bg-violet-400" />
-      <div className="h-2 w-2 animate-pulse rounded-full bg-fuchsia-400 [animation-delay:150ms]" />
-      <div className="h-2 w-2 animate-pulse rounded-full bg-rose-400 [animation-delay:300ms]" />
-      <span className="ml-2 text-sm">
-        {tier === "video"
-          ? "Generating videos — this takes 30–60 seconds…"
-          : "Generating across multiple AI voice models…"}
-      </span>
-    </div>
-  );
+function useTick(active: boolean, intervalMs = 100) {
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (!active) return;
+    const id = setInterval(() => setTick((t) => t + 1), intervalMs);
+    return () => clearInterval(id);
+  }, [active, intervalMs]);
 }
 
-function ResultCard({ result }: { result: ModelResult }) {
+function ResultCard({
+  model,
+  state,
+}: {
+  model: ModelMeta;
+  state: ModelState | undefined;
+}) {
+  const isLoading = !!state?.loading;
+  useTick(isLoading);
+
+  const progress = (() => {
+    if (!state) return 0;
+    if (state.result || state.error) return 100;
+    if (!state.loading || !state.startedAt) return 0;
+    const elapsed = Date.now() - state.startedAt;
+    const target = model.estimatedSeconds * 1000;
+    return Math.min((elapsed / target) * 100, 95);
+  })();
+
+  const elapsedSec = state?.startedAt
+    ? Math.max(0, Math.round((Date.now() - state.startedAt) / 1000))
+    : 0;
+
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
       <div className="flex items-center gap-2 text-sm text-zinc-400">
-        <span className="text-base">{result.flag}</span>
-        <span>{result.provider}</span>
+        <span className="text-base">{model.flag}</span>
+        <span>{model.provider}</span>
       </div>
-      <div className="mt-1 font-semibold text-zinc-100">{result.name}</div>
-      <div className="mt-4">
-        {result.mediaUrl ? (
-          result.type === "video" ? (
+      <div className="mt-1 font-semibold text-zinc-100">{model.name}</div>
+
+      <div className="mt-4 min-h-[60px]">
+        {state?.result?.mediaUrl ? (
+          state.result.type === "video" ? (
             <video
               controls
-              src={result.mediaUrl}
+              src={state.result.mediaUrl}
               className="w-full rounded-lg bg-black"
             />
           ) : (
             <audio
               controls
-              src={result.mediaUrl}
+              src={state.result.mediaUrl}
               className="w-full [&::-webkit-media-controls-panel]:bg-zinc-800"
             />
           )
+        ) : state?.error ? (
+          <div className="text-xs text-red-400 break-words">{state.error}</div>
         ) : (
-          <div className="text-xs text-red-400">
-            {result.error ?? "No media returned"}
-          </div>
+          <ProgressBar
+            progress={progress}
+            elapsedSec={elapsedSec}
+            estimatedSec={model.estimatedSeconds}
+            loading={isLoading}
+          />
         )}
+      </div>
+    </div>
+  );
+}
+
+function ProgressBar({
+  progress,
+  elapsedSec,
+  estimatedSec,
+  loading,
+}: {
+  progress: number;
+  elapsedSec: number;
+  estimatedSec: number;
+  loading: boolean;
+}) {
+  const overrun = elapsedSec > estimatedSec;
+  return (
+    <div className="space-y-2">
+      <div className="h-1.5 w-full rounded-full bg-zinc-800 overflow-hidden">
+        <div
+          className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 transition-[width] duration-100"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+      <div className="flex items-center justify-between text-[11px] text-zinc-500">
+        <span>
+          {loading ? `${Math.round(progress)}%` : "Queued…"}
+          {overrun && " (taking longer than usual)"}
+        </span>
+        <span>
+          {elapsedSec}s / ~{estimatedSec}s
+        </span>
       </div>
     </div>
   );

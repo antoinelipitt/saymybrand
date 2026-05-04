@@ -51,7 +51,7 @@ export default function Home() {
           />
           <Feature
             title="Multi-model"
-            body="ElevenLabs, Gemini Flash and MiniMax for voice. Veo 3.1, Seedance and Happy Horse for video. All on fal.ai."
+            body="ElevenLabs, Gemini Flash and MiniMax for voice. Veo 3.1, Seedance and Kling for video. All on fal.ai."
           />
           <Feature
             title="Honest"

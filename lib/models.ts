@@ -1,12 +1,16 @@
 export type ModelType = "audio" | "video";
 
-export type ModelConfig = {
+export type ModelMeta = {
   id: string;
-  endpoint: string;
   name: string;
   provider: string;
   flag: string;
   type: ModelType;
+  estimatedSeconds: number;
+};
+
+export type ModelConfig = ModelMeta & {
+  endpoint: string;
   buildInput: (brand: string) => Record<string, unknown>;
   extractMediaUrl: (data: unknown) => string | null;
 };
@@ -50,6 +54,7 @@ export const TIER_1_TOP3: ModelConfig[] = [
     provider: "ElevenLabs",
     flag: "🇺🇸",
     type: "audio",
+    estimatedSeconds: 6,
     buildInput: (brand) => ({ text: ttsPhrase(brand) }),
     extractMediaUrl: getMediaUrl,
   },
@@ -60,6 +65,7 @@ export const TIER_1_TOP3: ModelConfig[] = [
     provider: "Google",
     flag: "🇺🇸",
     type: "audio",
+    estimatedSeconds: 5,
     buildInput: (brand) => ({ prompt: ttsPhrase(brand) }),
     extractMediaUrl: getMediaUrl,
   },
@@ -70,6 +76,7 @@ export const TIER_1_TOP3: ModelConfig[] = [
     provider: "MiniMax",
     flag: "🇨🇳",
     type: "audio",
+    estimatedSeconds: 7,
     buildInput: (brand) => ({
       text: ttsPhrase(brand),
       voice_setting: { voice_id: "Wise_Woman" },
@@ -86,6 +93,7 @@ export const TIER_2_MORE: ModelConfig[] = [
     provider: "Inworld",
     flag: "🇺🇸",
     type: "audio",
+    estimatedSeconds: 6,
     buildInput: (brand) => ({ text: ttsPhrase(brand) }),
     extractMediaUrl: getMediaUrl,
   },
@@ -96,6 +104,7 @@ export const TIER_2_MORE: ModelConfig[] = [
     provider: "Resemble AI",
     flag: "🇺🇸",
     type: "audio",
+    estimatedSeconds: 6,
     buildInput: (brand) => ({ text: ttsPhrase(brand) }),
     extractMediaUrl: getMediaUrl,
   },
@@ -109,6 +118,7 @@ export const TIER_3_VIDEO: ModelConfig[] = [
     provider: "Google DeepMind",
     flag: "🇺🇸",
     type: "video",
+    estimatedSeconds: 40,
     buildInput: (brand) => ({
       prompt: videoSceneFor(brand),
       resolution: "720p",
@@ -124,6 +134,7 @@ export const TIER_3_VIDEO: ModelConfig[] = [
     provider: "ByteDance",
     flag: "🇨🇳",
     type: "video",
+    estimatedSeconds: 30,
     buildInput: (brand) => ({
       prompt: videoSceneFor(brand),
       resolution: "480p",
@@ -140,24 +151,11 @@ export const TIER_3_VIDEO: ModelConfig[] = [
     provider: "Kuaishou",
     flag: "🇨🇳",
     type: "video",
+    estimatedSeconds: 45,
     buildInput: (brand) => ({
       prompt: videoSceneFor(brand),
       duration: "3",
       generate_audio: true,
-    }),
-    extractMediaUrl: getMediaUrl,
-  },
-  {
-    id: "happy-horse-1.0",
-    endpoint: "alibaba/happy-horse/text-to-video",
-    name: "Happy Horse 1.0",
-    provider: "Alibaba",
-    flag: "🇨🇳",
-    type: "video",
-    buildInput: (brand) => ({
-      prompt: videoSceneFor(brand),
-      resolution: "720p",
-      duration: 3,
     }),
     extractMediaUrl: getMediaUrl,
   },
@@ -170,3 +168,26 @@ export const TIERS = {
 } as const;
 
 export type TierKey = keyof typeof TIERS;
+
+const toMeta = (m: ModelConfig): ModelMeta => ({
+  id: m.id,
+  name: m.name,
+  provider: m.provider,
+  flag: m.flag,
+  type: m.type,
+  estimatedSeconds: m.estimatedSeconds,
+});
+
+export const TIERS_META: Record<TierKey, ModelMeta[]> = {
+  top3: TIER_1_TOP3.map(toMeta),
+  more: TIER_2_MORE.map(toMeta),
+  video: TIER_3_VIDEO.map(toMeta),
+};
+
+export const findModelById = (id: string): ModelConfig | undefined => {
+  for (const tier of Object.values(TIERS)) {
+    const found = tier.find((m) => m.id === id);
+    if (found) return found;
+  }
+  return undefined;
+};
