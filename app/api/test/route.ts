@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { getFalClient } from "@/lib/fal";
-import { TIERS, type ModelConfig, type TierKey } from "@/lib/models";
+import {
+  TIERS,
+  ttsPhrase,
+  videoPhrase,
+  type ModelConfig,
+  type TierKey,
+} from "@/lib/models";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -27,12 +33,12 @@ const isTierKey = (input: unknown): input is TierKey =>
 
 const runModel = async (
   model: ModelConfig,
-  prompt: string
+  brand: string
 ): Promise<ModelResult> => {
   try {
     const fal = getFalClient();
     const result = await fal.subscribe(model.endpoint, {
-      input: model.buildInput(prompt),
+      input: model.buildInput(brand),
     });
     const mediaUrl = model.extractMediaUrl(result.data);
     return {
@@ -70,10 +76,10 @@ export async function POST(req: Request) {
     );
   }
 
-  const prompt = `Welcome to ${brand}.`;
+  const prompt = tier === "video" ? videoPhrase(brand) : ttsPhrase(brand);
   const models = TIERS[tier];
   const results = await Promise.all(
-    models.map((model) => runModel(model, prompt))
+    models.map((model) => runModel(model, brand))
   );
 
   return NextResponse.json({ brand, prompt, tier, results });

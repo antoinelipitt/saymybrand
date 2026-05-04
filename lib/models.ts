@@ -7,7 +7,7 @@ export type ModelConfig = {
   provider: string;
   flag: string;
   type: ModelType;
-  buildInput: (text: string) => Record<string, unknown>;
+  buildInput: (brand: string) => Record<string, unknown>;
   extractMediaUrl: (data: unknown) => string | null;
 };
 
@@ -34,7 +34,13 @@ const getMediaUrl = (data: unknown): string | null => {
   return null;
 };
 
-const ttsInput = (text: string) => ({ text });
+export const ttsPhrase = (brand: string) => `Welcome to ${brand}.`;
+
+export const videoPhrase = (brand: string) =>
+  `Welcome to ${brand}, the future starts here.`;
+
+const videoSceneFor = (brand: string) =>
+  `A spokesperson on camera, looking directly at the viewer, clearly says: "${videoPhrase(brand)}". Studio lighting, neutral background, professional ad style.`;
 
 export const TIER_1_TOP3: ModelConfig[] = [
   {
@@ -44,7 +50,7 @@ export const TIER_1_TOP3: ModelConfig[] = [
     provider: "ElevenLabs",
     flag: "🇺🇸",
     type: "audio",
-    buildInput: ttsInput,
+    buildInput: (brand) => ({ text: ttsPhrase(brand) }),
     extractMediaUrl: getMediaUrl,
   },
   {
@@ -54,7 +60,7 @@ export const TIER_1_TOP3: ModelConfig[] = [
     provider: "Google",
     flag: "🇺🇸",
     type: "audio",
-    buildInput: (text) => ({ prompt: text }),
+    buildInput: (brand) => ({ prompt: ttsPhrase(brand) }),
     extractMediaUrl: getMediaUrl,
   },
   {
@@ -64,7 +70,10 @@ export const TIER_1_TOP3: ModelConfig[] = [
     provider: "MiniMax",
     flag: "🇨🇳",
     type: "audio",
-    buildInput: (text) => ({ text, voice_setting: { voice_id: "Wise_Woman" } }),
+    buildInput: (brand) => ({
+      text: ttsPhrase(brand),
+      voice_setting: { voice_id: "Wise_Woman" },
+    }),
     extractMediaUrl: getMediaUrl,
   },
 ];
@@ -77,7 +86,7 @@ export const TIER_2_MORE: ModelConfig[] = [
     provider: "Inworld",
     flag: "🇺🇸",
     type: "audio",
-    buildInput: ttsInput,
+    buildInput: (brand) => ({ text: ttsPhrase(brand) }),
     extractMediaUrl: getMediaUrl,
   },
   {
@@ -87,13 +96,10 @@ export const TIER_2_MORE: ModelConfig[] = [
     provider: "Resemble AI",
     flag: "🇺🇸",
     type: "audio",
-    buildInput: ttsInput,
+    buildInput: (brand) => ({ text: ttsPhrase(brand) }),
     extractMediaUrl: getMediaUrl,
   },
 ];
-
-const videoPrompt = (text: string) =>
-  `A spokesperson on camera, looking directly at the viewer, clearly says: "${text}". Studio lighting, neutral background, professional ad style.`;
 
 export const TIER_3_VIDEO: ModelConfig[] = [
   {
@@ -103,8 +109,8 @@ export const TIER_3_VIDEO: ModelConfig[] = [
     provider: "Google DeepMind",
     flag: "🇺🇸",
     type: "video",
-    buildInput: (text) => ({
-      prompt: videoPrompt(text),
+    buildInput: (brand) => ({
+      prompt: videoSceneFor(brand),
       resolution: "720p",
       duration: "4s",
       generate_audio: true,
@@ -118,8 +124,8 @@ export const TIER_3_VIDEO: ModelConfig[] = [
     provider: "ByteDance",
     flag: "🇨🇳",
     type: "video",
-    buildInput: (text) => ({
-      prompt: videoPrompt(text),
+    buildInput: (brand) => ({
+      prompt: videoSceneFor(brand),
       resolution: "480p",
       duration: "4",
       generate_audio: true,
@@ -133,8 +139,8 @@ export const TIER_3_VIDEO: ModelConfig[] = [
     provider: "Kuaishou",
     flag: "🇨🇳",
     type: "video",
-    buildInput: (text) => ({
-      prompt: videoPrompt(text),
+    buildInput: (brand) => ({
+      prompt: videoSceneFor(brand),
       duration: "3",
       generate_audio: true,
     }),
@@ -147,8 +153,8 @@ export const TIER_3_VIDEO: ModelConfig[] = [
     provider: "Alibaba",
     flag: "🇨🇳",
     type: "video",
-    buildInput: (text) => ({
-      prompt: videoPrompt(text),
+    buildInput: (brand) => ({
+      prompt: videoSceneFor(brand),
       resolution: "720p",
       duration: 3,
     }),
@@ -163,18 +169,3 @@ export const TIERS = {
 } as const;
 
 export type TierKey = keyof typeof TIERS;
-
-export const TIER_LABELS: Record<TierKey, { title: string; subtitle: string }> = {
-  top3: {
-    title: "Top 3 multilingual TTS",
-    subtitle: "Most-used multilingual TTS available on fal.ai",
-  },
-  more: {
-    title: "More TTS models",
-    subtitle: "Other multilingual TTS models worth a listen",
-  },
-  video: {
-    title: "AI video models",
-    subtitle: "Watch a spokesperson say your brand. Takes 30–60s.",
-  },
-};
