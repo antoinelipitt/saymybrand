@@ -46,7 +46,7 @@ export const videoPhrase = (brand: string) =>
 const videoSceneFor = (brand: string) =>
   `A spokesperson on camera, looking directly at the viewer, clearly says: "${videoPhrase(brand)}". Studio lighting, neutral background, professional ad style.`;
 
-export const TIER_1_TOP3: ModelConfig[] = [
+export const TTS_MODELS: ModelConfig[] = [
   {
     id: "elevenlabs-v3",
     endpoint: "fal-ai/elevenlabs/tts/eleven-v3",
@@ -83,9 +83,6 @@ export const TIER_1_TOP3: ModelConfig[] = [
     }),
     extractMediaUrl: getMediaUrl,
   },
-];
-
-export const TIER_2_MORE: ModelConfig[] = [
   {
     id: "inworld-tts",
     endpoint: "fal-ai/inworld-tts",
@@ -97,20 +94,9 @@ export const TIER_2_MORE: ModelConfig[] = [
     buildInput: (brand) => ({ text: ttsPhrase(brand) }),
     extractMediaUrl: getMediaUrl,
   },
-  {
-    id: "chatterbox",
-    endpoint: "fal-ai/chatterbox/text-to-speech",
-    name: "Chatterbox",
-    provider: "Resemble AI",
-    flag: "🇺🇸",
-    type: "audio",
-    estimatedSeconds: 6,
-    buildInput: (brand) => ({ text: ttsPhrase(brand) }),
-    extractMediaUrl: getMediaUrl,
-  },
 ];
 
-export const TIER_3_VIDEO: ModelConfig[] = [
+export const VIDEO_MODELS: ModelConfig[] = [
   {
     id: "veo-3.1-fast",
     endpoint: "fal-ai/veo3.1/fast",
@@ -159,12 +145,26 @@ export const TIER_3_VIDEO: ModelConfig[] = [
     }),
     extractMediaUrl: getMediaUrl,
   },
+  {
+    id: "happy-horse-1.0",
+    endpoint: "alibaba/happy-horse/text-to-video",
+    name: "Happy Horse 1.0",
+    provider: "Alibaba",
+    flag: "🇨🇳",
+    type: "video",
+    estimatedSeconds: 45,
+    buildInput: (brand) => ({
+      prompt: videoSceneFor(brand),
+      resolution: "720p",
+      duration: 3,
+    }),
+    extractMediaUrl: getMediaUrl,
+  },
 ];
 
 export const TIERS = {
-  top3: TIER_1_TOP3,
-  more: TIER_2_MORE,
-  video: TIER_3_VIDEO,
+  tts: TTS_MODELS,
+  video: VIDEO_MODELS,
 } as const;
 
 export type TierKey = keyof typeof TIERS;
@@ -179,9 +179,8 @@ const toMeta = (m: ModelConfig): ModelMeta => ({
 });
 
 export const TIERS_META: Record<TierKey, ModelMeta[]> = {
-  top3: TIER_1_TOP3.map(toMeta),
-  more: TIER_2_MORE.map(toMeta),
-  video: TIER_3_VIDEO.map(toMeta),
+  tts: TTS_MODELS.map(toMeta),
+  video: VIDEO_MODELS.map(toMeta),
 };
 
 export const findModelById = (id: string): ModelConfig | undefined => {

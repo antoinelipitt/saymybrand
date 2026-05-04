@@ -27,17 +27,14 @@ type ModelState = {
 };
 
 const TIER_META: Record<TierKey, { title: string; subtitle: string }> = {
-  top3: {
-    title: "Top 3 TTS models in the world",
-    subtitle: "ElevenLabs, Gemini Flash and MiniMax — the leaders",
-  },
-  more: {
-    title: "More TTS models",
-    subtitle: "Other multilingual TTS worth a listen",
+  tts: {
+    title: "Text-to-speech models",
+    subtitle:
+      "Hear how 4 leading AI voice models pronounce your brand",
   },
   video: {
     title: "AI video models",
-    subtitle: "Watch a spokesperson say your brand",
+    subtitle: "Watch 4 AI spokespersons say your brand",
   },
 };
 
@@ -46,8 +43,7 @@ export function TestSection({ initialBrand }: { initialBrand?: string }) {
   const [activeBrand, setActiveBrand] = useState<string | null>(null);
   const [states, setStates] = useState<Record<string, ModelState>>({});
   const [triggered, setTriggered] = useState<Record<TierKey, boolean>>({
-    top3: false,
-    more: false,
+    tts: false,
     video: false,
   });
   const aborterRef = useRef<AbortController | null>(null);
@@ -116,8 +112,8 @@ export function TestSection({ initialBrand }: { initialBrand?: string }) {
 
     setActiveBrand(trimmed);
     setStates({});
-    setTriggered({ top3: false, more: false, video: false });
-    runTier("top3", trimmed, ctrl.signal);
+    setTriggered({ tts: false, video: false });
+    runTier("tts", trimmed, ctrl.signal);
   };
 
   useEffect(() => {
@@ -125,7 +121,7 @@ export function TestSection({ initialBrand }: { initialBrand?: string }) {
     return () => aborterRef.current?.abort();
   }, [initialBrand]);
 
-  const tier1Loading = TIERS_META.top3.some((m) => states[m.id]?.loading);
+  const ttsLoading = TIERS_META.tts.some((m) => states[m.id]?.loading);
 
   return (
     <div id="test" className="w-full max-w-3xl mx-auto px-6">
@@ -146,28 +142,16 @@ export function TestSection({ initialBrand }: { initialBrand?: string }) {
         />
         <button
           type="submit"
-          disabled={tier1Loading || brand.trim().length === 0}
+          disabled={ttsLoading || brand.trim().length === 0}
           className="rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-violet-500/30 transition hover:shadow-violet-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {tier1Loading ? "Testing…" : "Test it"}
+          {ttsLoading ? "Testing…" : "Test it"}
         </button>
       </form>
 
       {activeBrand && (
         <div className="mt-12 space-y-12">
-          <TierBlock tier="top3" brand={activeBrand} states={states} />
-
-          {triggered.more ? (
-            <TierBlock tier="more" brand={activeBrand} states={states} />
-          ) : (
-            <NextTierCta
-              tier="more"
-              onClick={() =>
-                aborterRef.current &&
-                runTier("more", activeBrand, aborterRef.current.signal)
-              }
-            />
-          )}
+          <TierBlock tier="tts" brand={activeBrand} states={states} />
 
           {triggered.video ? (
             <TierBlock tier="video" brand={activeBrand} states={states} />
@@ -215,7 +199,7 @@ function TierBlock({
         <span className="font-mono text-zinc-300">"{phrase}"</span>
       </p>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
         {models.map((m) => (
           <ResultCard key={m.id} model={m} state={states[m.id]} />
         ))}
