@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+:root {
+  --background: #000000;
+  --foreground: #fafafa;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+@utility text-gradient {
+  background: linear-gradient(135deg, #c4b5fd 0%, #f0abfc 50%, #fda4af 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+@utility glow-violet {
+  box-shadow: 0 0 80px -10px rgba(168, 85, 247, 0.5);
+}
