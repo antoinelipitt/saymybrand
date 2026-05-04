@@ -106,7 +106,8 @@ export const TIER_3_VIDEO: ModelConfig[] = [
     buildInput: (text) => ({
       prompt: videoPrompt(text),
       resolution: "720p",
-      audio: true,
+      duration: "4s",
+      generate_audio: true,
     }),
     extractMediaUrl: getMediaUrl,
   },
@@ -134,7 +135,7 @@ export const TIER_3_VIDEO: ModelConfig[] = [
     type: "video",
     buildInput: (text) => ({
       prompt: videoPrompt(text),
-      duration: "5",
+      duration: "3",
       generate_audio: true,
     }),
     extractMediaUrl: getMediaUrl,
