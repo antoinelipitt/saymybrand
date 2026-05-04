@@ -150,7 +150,7 @@ export function TestSection({ initialBrand }: { initialBrand?: string }) {
 
       {!activeBrand && (
         <p className="mt-4 text-center text-xs text-zinc-500">
-          ✓ No signup &nbsp; ✓ 4 voice models &nbsp; ✓ Results in ~7 seconds
+          ✓ No signup &nbsp; ✓ Voice tests free &nbsp; ✓ 4 voice + 4 video models
         </p>
       )}
 

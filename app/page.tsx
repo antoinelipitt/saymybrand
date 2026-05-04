@@ -30,6 +30,8 @@ export default function Home() {
 
       <Pricing />
 
+      <FinalCta />
+
       <Footer />
     </main>
   );
@@ -87,8 +89,8 @@ function Hero({ children }: { children: React.ReactNode }) {
           How AI <span className="text-gradient">hears</span> your brand.
         </h1>
         <p className="mt-6 text-lg sm:text-xl text-zinc-400 max-w-2xl mx-auto">
-          Test your brand name across 4 leading AI voice models in 7 seconds.
-          Hear how they say it. Pick the safe ones — or rethink the name before
+          Test your brand name across leading AI voice and video models. Hear
+          how they say it. Pick the safe ones — or rethink the name before
           your first AI ad campaign.
         </p>
       </div>
@@ -107,13 +109,13 @@ function HowItWorks() {
     },
     {
       num: "02",
-      title: "Listen to 4 AIs",
-      body: "ElevenLabs, Gemini, MiniMax and Inworld pronounce it side by side.",
+      title: "Hear & watch",
+      body: "4 voice models pronounce it for free. 4 video spokespersons say it on camera with the Full test.",
     },
     {
       num: "03",
       title: "Decide",
-      body: "Use the ones that get it right. Avoid the ones that don't. Or rename.",
+      body: "Use the ones that get it right. Avoid the ones that don't. Or rename before going live.",
     },
   ];
 
@@ -125,7 +127,7 @@ function HowItWorks() {
             How it works
           </p>
           <h2 className="text-4xl font-bold text-white">
-            Three steps. Seven seconds.
+            Three steps to a brand-safe name.
           </h2>
         </div>
 
@@ -145,6 +147,37 @@ function HowItWorks() {
             </div>
           ))}
         </div>
+      </div>
+    </section>
+  );
+}
+
+function FinalCta() {
+  return (
+    <section className="border-t border-zinc-900 py-24 sm:py-32 relative overflow-hidden">
+      <div
+        aria-hidden
+        className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,_rgba(168,85,247,0.18),_transparent_65%)]"
+      />
+      <div className="max-w-3xl mx-auto px-6 text-center">
+        <p className="text-sm uppercase tracking-widest text-fuchsia-400 mb-4">
+          Ready?
+        </p>
+        <h2 className="text-5xl sm:text-7xl font-bold leading-[1.05] tracking-tight text-white">
+          Hear how AI says
+          <br />
+          <span className="text-gradient">your</span> brand.
+        </h2>
+        <p className="mt-6 text-lg text-zinc-400 max-w-xl mx-auto">
+          Voice tests are free. Type your brand and listen — judge for
+          yourself in a few seconds.
+        </p>
+        <a
+          href="#test"
+          className="inline-block mt-8 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 px-8 py-4 text-base font-semibold text-white shadow-lg shadow-violet-500/30 transition hover:shadow-violet-500/50"
+        >
+          Test your brand free →
+        </a>
       </div>
     </section>
   );
