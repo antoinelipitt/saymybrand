@@ -97,9 +97,9 @@ const videoPrompt = (text: string) =>
 
 export const TIER_3_VIDEO: ModelConfig[] = [
   {
-    id: "veo-3.1",
-    endpoint: "fal-ai/veo3.1",
-    name: "Veo 3.1",
+    id: "veo-3.1-fast",
+    endpoint: "fal-ai/veo3.1/fast",
+    name: "Veo 3.1 Fast",
     provider: "Google DeepMind",
     flag: "🇺🇸",
     type: "video",
@@ -111,16 +111,16 @@ export const TIER_3_VIDEO: ModelConfig[] = [
     extractMediaUrl: getMediaUrl,
   },
   {
-    id: "seedance-2.0",
-    endpoint: "bytedance/seedance-2.0/text-to-video",
-    name: "Seedance 2.0",
+    id: "seedance-2.0-fast",
+    endpoint: "bytedance/seedance-2.0/fast/text-to-video",
+    name: "Seedance 2.0 Fast",
     provider: "ByteDance",
     flag: "🇨🇳",
     type: "video",
     buildInput: (text) => ({
       prompt: videoPrompt(text),
-      resolution: "720p",
-      duration: "5",
+      resolution: "480p",
+      duration: "4",
       generate_audio: true,
     }),
     extractMediaUrl: getMediaUrl,
@@ -149,7 +149,7 @@ export const TIER_3_VIDEO: ModelConfig[] = [
     buildInput: (text) => ({
       prompt: videoPrompt(text),
       resolution: "720p",
-      duration: 5,
+      duration: 3,
     }),
     extractMediaUrl: getMediaUrl,
   },
