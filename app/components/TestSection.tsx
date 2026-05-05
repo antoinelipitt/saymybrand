@@ -460,13 +460,15 @@ function LockedVideoTier() {
 
 function LockedVideoPlaceholder({ model }: { model: ModelMeta }) {
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
-      <div className="flex items-center gap-2 text-sm text-zinc-400">
-        <span className="text-base">{model.flag}</span>
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+      <div className="flex items-center gap-2 text-[11px] text-zinc-400">
+        <span className="text-sm">{model.flag}</span>
         <span>{model.provider}</span>
       </div>
-      <div className="mt-1 font-semibold text-zinc-300">{model.name}</div>
-      <div className="mt-4 relative aspect-video rounded-lg overflow-hidden border border-zinc-800 bg-gradient-to-br from-zinc-800/40 via-violet-900/15 to-fuchsia-900/15">
+      <div className="mt-0.5 text-sm font-semibold text-zinc-100 truncate">
+        {model.name}
+      </div>
+      <div className="mt-3 relative aspect-video rounded-lg overflow-hidden border border-zinc-800 bg-gradient-to-br from-zinc-800/40 via-violet-900/15 to-fuchsia-900/15">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(168,85,247,0.10),_transparent_70%)]" />
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="rounded-full border border-zinc-700/80 bg-zinc-950/70 backdrop-blur-sm p-2.5">
