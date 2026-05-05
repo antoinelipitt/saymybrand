@@ -39,31 +39,29 @@ const TIER_META: Record<TierKey, { title: string; subtitle: string }> = {
 const easeOut = [0.22, 1, 0.36, 1] as const;
 
 const sectionVariants: Variants = {
-  hidden: { opacity: 0, y: 16 },
+  hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    y: 0,
-    transition: { duration: 0.45, ease: easeOut },
+    transition: { duration: 0.4, ease: easeOut },
   },
 };
 
 const gridVariants: Variants = {
   hidden: {},
   show: {
-    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
+    transition: { staggerChildren: 0.06, delayChildren: 0.05 },
   },
 };
 
 const cardVariants: Variants = {
-  hidden: { opacity: 0, y: 24 },
+  hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    y: 0,
-    transition: { duration: 0.5, ease: easeOut },
+    transition: { duration: 0.4, ease: easeOut },
   },
 };
 
-const layoutTransition = { duration: 0.6, ease: easeOut };
+const layoutTransition = { duration: 0.55, ease: easeOut };
 
 export function TestSection({ initialBrand }: { initialBrand?: string }) {
   const [brand, setBrand] = useState(initialBrand ?? "");
@@ -273,7 +271,7 @@ function ResultsView({
       transition={{ duration: 0.25 }}
       className="rounded-3xl border border-zinc-800 bg-zinc-950/70 backdrop-blur-sm shadow-[0_30px_90px_-30px_rgba(168,85,247,0.4)] p-6 sm:p-8"
     >
-      <header className="flex items-center justify-between gap-4 mb-10 flex-wrap">
+      <header className="flex items-start justify-between gap-4 mb-10">
         <div className="min-w-0">
           <p className="text-[11px] uppercase tracking-widest text-fuchsia-400">
             Testing
@@ -317,7 +315,7 @@ function ResultsView({
         variants={sectionVariants}
         initial="hidden"
         animate="show"
-        transition={{ delay: 0.15 }}
+        transition={{ delay: 0.05 }}
         className="mb-12"
       >
         <TierHeader tier="tts" />
@@ -339,7 +337,7 @@ function ResultsView({
         variants={sectionVariants}
         initial="hidden"
         animate="show"
-        transition={{ delay: 0.3 }}
+        transition={{ delay: 0.15 }}
       >
         <TierHeader tier="video" locked={!triggered.video} />
 
@@ -420,13 +418,13 @@ function LockedVideoTier() {
 
 function LockedVideoPlaceholder({ model }: { model: ModelMeta }) {
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5 min-h-[260px] flex flex-col">
       <div className="flex items-center gap-2 text-sm text-zinc-400">
         <span className="text-base">{model.flag}</span>
         <span>{model.provider}</span>
       </div>
       <div className="mt-1 font-semibold text-zinc-300">{model.name}</div>
-      <div className="mt-4 relative aspect-video rounded-lg overflow-hidden border border-zinc-800 bg-gradient-to-br from-zinc-800/40 via-violet-900/15 to-fuchsia-900/15">
+      <div className="mt-4 flex-1 relative rounded-lg overflow-hidden border border-zinc-800 bg-gradient-to-br from-zinc-800/40 via-violet-900/15 to-fuchsia-900/15">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(168,85,247,0.10),_transparent_70%)]" />
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="rounded-full border border-zinc-700/80 bg-zinc-950/70 backdrop-blur-sm p-2.5">
@@ -489,15 +487,21 @@ function ResultCard({
     ? Math.max(0, Math.round((Date.now() - state.startedAt) / 1000))
     : 0;
 
+  const isVideo = model.type === "video";
+
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 h-full">
+    <div
+      className={`rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 h-full flex flex-col ${
+        isVideo ? "min-h-[260px]" : "min-h-[150px]"
+      }`}
+    >
       <div className="flex items-center gap-2 text-sm text-zinc-400">
         <span className="text-base">{model.flag}</span>
         <span>{model.provider}</span>
       </div>
       <div className="mt-1 font-semibold text-zinc-100">{model.name}</div>
 
-      <div className="mt-4 min-h-[60px]">
+      <div className="mt-4 flex-1 flex items-center">
         {state?.result?.mediaUrl ? (
           state.result.type === "video" ? (
             <video
@@ -513,14 +517,18 @@ function ResultCard({
             />
           )
         ) : state?.error ? (
-          <div className="text-xs text-red-400 break-words">{state.error}</div>
+          <div className="w-full text-xs text-red-400 break-words">
+            {state.error}
+          </div>
         ) : (
-          <ProgressBar
-            progress={progress}
-            elapsedSec={elapsedSec}
-            estimatedSec={model.estimatedSeconds}
-            loading={isLoading}
-          />
+          <div className="w-full">
+            <ProgressBar
+              progress={progress}
+              elapsedSec={elapsedSec}
+              estimatedSec={model.estimatedSeconds}
+              loading={isLoading}
+            />
+          </div>
         )}
       </div>
     </div>
