@@ -3,8 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
   TIERS_META,
-  ttsPhrase,
-  videoPhrase,
   type ModelMeta,
   type TierKey,
 } from "@/lib/models";
@@ -28,12 +26,12 @@ type ModelState = {
 
 const TIER_META: Record<TierKey, { title: string; subtitle: string }> = {
   tts: {
-    title: "Text-to-speech models",
-    subtitle: "4 leading AI voice models pronounce your brand",
+    title: "Voice models",
+    subtitle: "Hear how 4 leading AI voices pronounce your brand",
   },
   video: {
-    title: "AI video models",
-    subtitle: "4 AI spokespersons say your brand on camera",
+    title: "Video models",
+    subtitle: "Watch 4 AI spokespersons say your brand on camera",
   },
 };
 
@@ -214,41 +212,39 @@ function ResultsModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm overflow-y-auto"
+      className="fixed inset-0 z-50 bg-black/55 backdrop-blur-md flex items-center justify-center p-3 sm:p-8"
       onClick={onClose}
     >
-      <div className="min-h-full flex items-start sm:items-center justify-center p-3 sm:p-6">
-        <div
-          className="relative w-full max-w-5xl rounded-2xl border border-zinc-800 bg-zinc-950 my-auto"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-zinc-900 bg-zinc-950/95 backdrop-blur px-6 py-4 rounded-t-2xl">
-            <div className="min-w-0">
-              <p className="text-[11px] uppercase tracking-widest text-fuchsia-400">
-                Testing
-              </p>
-              <h2 className="text-2xl font-semibold text-white truncate">
-                {brand}
-              </h2>
-            </div>
-            <button
-              onClick={onClose}
-              aria-label="Close"
-              className="shrink-0 rounded-full p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 transition"
-            >
-              <CloseIcon />
-            </button>
+      <div
+        className="relative w-full max-w-5xl max-h-[88vh] overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950 shadow-[0_30px_90px_-20px_rgba(168,85,247,0.45)] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="shrink-0 flex items-center justify-between gap-4 border-b border-zinc-900 bg-zinc-950/95 backdrop-blur px-6 py-4">
+          <div className="min-w-0">
+            <p className="text-[11px] uppercase tracking-widest text-fuchsia-400">
+              Testing
+            </p>
+            <h2 className="text-2xl font-semibold text-white truncate">
+              {brand}
+            </h2>
           </div>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="shrink-0 rounded-full p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 transition"
+          >
+            <CloseIcon />
+          </button>
+        </div>
 
-          <div className="p-6 sm:p-8 space-y-12">
-            <TierBlock tier="tts" brand={brand} states={states} />
+        <div className="overflow-y-auto p-6 sm:p-8 space-y-12">
+          <TierBlock tier="tts" states={states} />
 
-            {triggered.video ? (
-              <TierBlock tier="video" brand={brand} states={states} />
-            ) : (
-              <LockedVideoTier onUnlock={onUnlockVideo} />
-            )}
-          </div>
+          {triggered.video ? (
+            <TierBlock tier="video" states={states} />
+          ) : (
+            <LockedVideoTier onUnlock={onUnlockVideo} />
+          )}
         </div>
       </div>
     </div>
@@ -257,16 +253,13 @@ function ResultsModal({
 
 function TierBlock({
   tier,
-  brand,
   states,
 }: {
   tier: TierKey;
-  brand: string;
   states: Record<string, ModelState>;
 }) {
   const meta = TIER_META[tier];
   const models = TIERS_META[tier];
-  const phrase = tier === "video" ? videoPhrase(brand) : ttsPhrase(brand);
   const maxEta = Math.max(...models.map((m) => m.estimatedSeconds));
 
   return (
@@ -278,11 +271,6 @@ function TierBlock({
         </div>
         <p className="text-sm text-zinc-500 mt-1">{meta.subtitle}</p>
       </div>
-
-      <p className="text-xs text-zinc-500 mb-4">
-        Listening to{" "}
-        <span className="font-mono text-zinc-300">&quot;{phrase}&quot;</span>
-      </p>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {models.map((m) => (
@@ -305,59 +293,68 @@ function LockedVideoTier({ onUnlock }: { onUnlock: () => void }) {
             <LockIcon className="w-4 h-4 text-zinc-500" />
             {meta.title}
           </h3>
-          <span className="text-[11px] text-zinc-500">Unlock — 9,90€</span>
         </div>
-        <p className="text-sm text-zinc-500 mt-1">
-          {meta.subtitle}. Click any to unlock the full set.
-        </p>
+        <p className="text-sm text-zinc-500 mt-1">{meta.subtitle}</p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {models.map((m) => (
-          <LockedVideoCard key={m.id} model={m} onUnlock={onUnlock} />
-        ))}
-      </div>
+      <div className="relative">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 pointer-events-none select-none">
+          {models.map((m) => (
+            <LockedVideoPlaceholder key={m.id} model={m} />
+          ))}
+        </div>
 
-      <p className="mt-4 text-center text-[11px] text-zinc-600">
-        Free preview during launch · payment activates with V1
-      </p>
+        <UnlockBanner onUnlock={onUnlock} />
+      </div>
     </div>
   );
 }
 
-function LockedVideoCard({
-  model,
-  onUnlock,
-}: {
-  model: ModelMeta;
-  onUnlock: () => void;
-}) {
+function UnlockBanner({ onUnlock }: { onUnlock: () => void }) {
   return (
-    <button
-      onClick={onUnlock}
-      className="group rounded-xl border border-zinc-800 bg-zinc-900/40 p-5 text-left transition hover:border-violet-500/40 hover:bg-zinc-900/70"
-    >
+    <div className="absolute inset-0 flex items-center justify-center p-4">
+      <div className="w-full max-w-md rounded-2xl border border-violet-500/40 bg-zinc-950/95 backdrop-blur-md p-6 sm:p-7 text-center shadow-[0_20px_60px_-15px_rgba(168,85,247,0.6)]">
+        <div className="inline-flex items-center gap-2 rounded-full border border-violet-400/30 bg-violet-500/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-violet-200">
+          <LockIcon className="w-3 h-3" />
+          Pro test · 9,90€
+        </div>
+        <h4 className="mt-4 text-2xl sm:text-3xl font-bold text-white leading-tight">
+          Don&apos;t let AI choose for you.
+        </h4>
+        <p className="mt-3 text-sm text-zinc-400 leading-relaxed">
+          Your brand will live in AI ads, UGC and product videos. See how
+          Veo, Seedance, Kling and Happy Horse say it on camera —{" "}
+          <span className="text-zinc-200 font-medium">
+            with native lip-sync
+          </span>{" "}
+          — before you spend on production.
+        </p>
+        <button
+          onClick={onUnlock}
+          className="mt-5 w-full rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 px-6 py-3.5 text-sm sm:text-base font-semibold text-white shadow-lg shadow-violet-500/30 transition hover:shadow-violet-500/50"
+        >
+          Unlock 4 video spokespersons — 9,90€
+        </button>
+        <p className="mt-3 text-[10px] uppercase tracking-widest text-zinc-600">
+          Free preview during launch
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function LockedVideoPlaceholder({ model }: { model: ModelMeta }) {
+  return (
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5 opacity-70">
       <div className="flex items-center gap-2 text-sm text-zinc-400">
         <span className="text-base">{model.flag}</span>
         <span>{model.provider}</span>
       </div>
-      <div className="mt-1 font-semibold text-zinc-200">{model.name}</div>
-
-      <div className="mt-4 relative aspect-video rounded-lg overflow-hidden border border-zinc-800">
-        <div className="absolute inset-0 bg-gradient-to-br from-zinc-800/40 via-violet-900/15 to-fuchsia-900/15" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(168,85,247,0.12),_transparent_70%)]" />
-        <div className="absolute inset-0 backdrop-blur-[1px]" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="rounded-full border border-zinc-700 bg-zinc-950/80 p-3 transition group-hover:border-violet-400 group-hover:bg-violet-500/20">
-            <LockIcon className="w-4 h-4 text-zinc-400 transition group-hover:text-violet-200" />
-          </div>
-        </div>
+      <div className="mt-1 font-semibold text-zinc-300">{model.name}</div>
+      <div className="mt-4 relative aspect-video rounded-lg overflow-hidden border border-zinc-800 bg-gradient-to-br from-zinc-800/40 via-violet-900/15 to-fuchsia-900/15">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(168,85,247,0.08),_transparent_70%)]" />
       </div>
-
-      <div className="mt-3 text-center text-[11px] text-zinc-500 transition group-hover:text-violet-300">
-        Click to unlock
-      </div>
-    </button>
+    </div>
   );
 }
 
