@@ -28,11 +28,11 @@ type ModelState = {
 const TIER_META: Record<TierKey, { title: string; subtitle: string }> = {
   tts: {
     title: "Voice models",
-    subtitle: "Hear how 4 leading AI voices pronounce your brand",
+    subtitle: "Hear how leading AI voices pronounce your brand",
   },
   video: {
     title: "Video models",
-    subtitle: "Watch 4 AI spokespersons say your brand on camera",
+    subtitle: "See how AI video characters say your brand on camera",
   },
 };
 
@@ -424,17 +424,7 @@ function TierHeader({
         </h3>
         <span className="text-xs text-zinc-500">~{maxEta}s</span>
       </div>
-      <p className="text-sm text-zinc-500 mt-1">
-        {locked ? (
-          <>
-            Don&apos;t let AI choose for you. See how 4 AI spokespersons say
-            your brand on camera —{" "}
-            <span className="text-zinc-300">use the unlock button above</span>.
-          </>
-        ) : (
-          meta.subtitle
-        )}
-      </p>
+      <p className="text-sm text-zinc-500 mt-1">{meta.subtitle}</p>
     </div>
   );
 }
