@@ -110,7 +110,7 @@ function HowItWorks() {
     {
       num: "02",
       title: "Hear & watch",
-      body: "4 voice models pronounce it for free. 4 video spokespersons say it on camera with the Full test.",
+      body: "Listen how voice and video AI models pronounce your brand name.",
     },
     {
       num: "03",
