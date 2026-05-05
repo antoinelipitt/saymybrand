@@ -532,15 +532,17 @@ function ResultCard({
   const isVideo = model.type === "video";
 
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 h-full">
-      <div className="flex items-center gap-2 text-sm text-zinc-400">
-        <span className="text-base">{model.flag}</span>
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 h-full">
+      <div className="flex items-center gap-2 text-[11px] text-zinc-400">
+        <span className="text-sm">{model.flag}</span>
         <span>{model.provider}</span>
       </div>
-      <div className="mt-1 font-semibold text-zinc-100">{model.name}</div>
+      <div className="mt-0.5 text-sm font-semibold text-zinc-100 truncate">
+        {model.name}
+      </div>
 
       {isVideo ? (
-        <div className="mt-4 relative aspect-video rounded-lg overflow-hidden border border-zinc-800 bg-zinc-950">
+        <div className="mt-3 relative aspect-video rounded-lg overflow-hidden border border-zinc-800 bg-zinc-950">
           {state?.result?.mediaUrl ? (
             <video
               controls
@@ -552,7 +554,7 @@ function ResultCard({
               {state.error}
             </div>
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center px-5">
+            <div className="absolute inset-0 flex items-center justify-center px-4">
               <div className="w-full max-w-[220px]">
                 <ProgressBar
                   progress={progress}
@@ -564,33 +566,42 @@ function ResultCard({
             </div>
           )}
         </div>
-      ) : (
-        <div className="mt-4 min-h-[60px] flex items-center">
-          {state?.result?.mediaUrl ? (
-            <AudioPlayer src={state.result.mediaUrl} />
-          ) : state?.error ? (
-            <div className="w-full text-xs text-red-400 break-words">
-              {state.error}
-            </div>
-          ) : (
-            <div className="w-full">
-              <ProgressBar
-                progress={progress}
-                elapsedSec={elapsedSec}
-                estimatedSec={model.estimatedSeconds}
-                loading={isLoading}
-              />
-            </div>
-          )}
+      ) : state?.error ? (
+        <div className="mt-3 text-xs text-red-400 break-words">
+          {state.error}
         </div>
+      ) : (
+        <AudioBar
+          src={state?.result?.mediaUrl ?? null}
+          progress={progress}
+          elapsedSec={elapsedSec}
+          estimatedSec={model.estimatedSeconds}
+          loading={isLoading}
+        />
       )}
     </div>
   );
 }
 
-function AudioPlayer({ src }: { src: string }) {
+function AudioBar({
+  src,
+  progress,
+  elapsedSec,
+  estimatedSec,
+  loading,
+}: {
+  src: string | null;
+  progress: number;
+  elapsedSec: number;
+  estimatedSec: number;
+  loading: boolean;
+}) {
   const [playing, setPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const ready = !!src;
 
   const toggle = async () => {
     const audio = audioRef.current;
@@ -606,33 +617,104 @@ function AudioPlayer({ src }: { src: string }) {
     }
   };
 
+  const audioProgress =
+    duration > 0 ? Math.min((currentTime / duration) * 100, 100) : 0;
+  const displayProgress = ready ? audioProgress : progress;
+
+  const overrun = elapsedSec > estimatedSec;
+
   return (
-    <div className="flex items-center gap-3 w-full">
-      <audio
-        ref={audioRef}
-        src={src}
-        preload="none"
-        onPlay={() => setPlaying(true)}
-        onPause={() => setPlaying(false)}
-        onEnded={() => setPlaying(false)}
-      />
-      <button
-        type="button"
-        onClick={toggle}
-        aria-label={playing ? "Pause" : "Play"}
-        className={`shrink-0 flex items-center justify-center w-10 h-10 rounded-full transition ${
-          playing
-            ? "bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-lg shadow-violet-500/40"
-            : "bg-zinc-800 hover:bg-zinc-700 text-zinc-200 ring-1 ring-inset ring-zinc-700 hover:ring-zinc-600"
-        }`}
-      >
-        {playing ? <PauseIcon /> : <PlayIcon />}
-      </button>
-      <span className="text-xs text-zinc-500 truncate">
-        {playing ? "Playing…" : "Tap to listen"}
-      </span>
+    <div className="mt-3">
+      {ready && src && (
+        <audio
+          ref={audioRef}
+          src={src}
+          preload="metadata"
+          onPlay={() => setPlaying(true)}
+          onPause={() => setPlaying(false)}
+          onEnded={() => setPlaying(false)}
+          onTimeUpdate={() =>
+            setCurrentTime(audioRef.current?.currentTime ?? 0)
+          }
+          onLoadedMetadata={() =>
+            setDuration(audioRef.current?.duration ?? 0)
+          }
+        />
+      )}
+
+      <div className="flex items-center gap-2.5">
+        <AnimatePresence initial={false}>
+          {ready && (
+            <motion.button
+              key="play-btn"
+              type="button"
+              onClick={toggle}
+              aria-label={playing ? "Pause" : "Play"}
+              initial={{ opacity: 0, width: 0, marginRight: -10 }}
+              animate={{ opacity: 1, width: 28, marginRight: 0 }}
+              exit={{ opacity: 0, width: 0, marginRight: -10 }}
+              transition={{ duration: 0.4, ease: easeOut }}
+              className={`shrink-0 flex items-center justify-center h-7 rounded-full transition-colors ${
+                playing
+                  ? "bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white"
+                  : "bg-zinc-800 hover:bg-zinc-700 text-zinc-200 ring-1 ring-inset ring-zinc-700"
+              }`}
+            >
+              {playing ? <PauseIcon /> : <PlayIcon />}
+            </motion.button>
+          )}
+        </AnimatePresence>
+
+        <div className="flex-1 h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+          <motion.div
+            className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500"
+            animate={{ width: `${displayProgress}%` }}
+            transition={{ duration: ready ? 0.1 : 0.15, ease: "linear" }}
+          />
+        </div>
+      </div>
+
+      <div className="mt-1.5 h-3 flex items-center justify-between text-[10px] text-zinc-500 leading-none">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.span
+            key={ready ? "audio-cur" : "loading-pct"}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            {ready
+              ? formatTime(currentTime)
+              : loading
+                ? `${Math.round(progress)}%`
+                : "Queued…"}
+          </motion.span>
+        </AnimatePresence>
+
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.span
+            key={ready ? "audio-dur" : "loading-eta"}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className={overrun && !ready ? "text-amber-400" : ""}
+          >
+            {ready
+              ? formatTime(duration)
+              : `${elapsedSec}s / ~${estimatedSec}s`}
+          </motion.span>
+        </AnimatePresence>
+      </div>
     </div>
   );
+}
+
+function formatTime(sec: number): string {
+  if (!isFinite(sec) || sec < 0) return "0:00";
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
 function PlayIcon() {
