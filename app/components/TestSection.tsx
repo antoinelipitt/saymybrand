@@ -39,7 +39,7 @@ const TIER_META: Record<TierKey, { title: string; subtitle: string }> = {
 const easeOut = [0.22, 1, 0.36, 1] as const;
 
 const sectionVariants: Variants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 16 },
   show: {
     opacity: 1,
     y: 0,
@@ -50,7 +50,7 @@ const sectionVariants: Variants = {
 const gridVariants: Variants = {
   hidden: {},
   show: {
-    transition: { staggerChildren: 0.08, delayChildren: 0.05 },
+    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
   },
 };
 
@@ -62,6 +62,8 @@ const cardVariants: Variants = {
     transition: { duration: 0.5, ease: easeOut },
   },
 };
+
+const layoutTransition = { duration: 0.6, ease: easeOut };
 
 export function TestSection({ initialBrand }: { initialBrand?: string }) {
   const [brand, setBrand] = useState(initialBrand ?? "");
@@ -164,33 +166,23 @@ export function TestSection({ initialBrand }: { initialBrand?: string }) {
 
   return (
     <div id="test" className="w-full max-w-5xl mx-auto px-6">
-      <AnimatePresence mode="wait" initial={false}>
+      <AnimatePresence initial={false} mode="popLayout">
         {!activeBrand ? (
-          <motion.div
+          <FormView
             key="form"
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.96, y: -8, filter: "blur(4px)" }}
-            transition={{ duration: 0.35, ease: easeOut }}
-            className="max-w-3xl mx-auto"
-          >
-            <FormView brand={brand} setBrand={setBrand} onSubmit={runFresh} />
-          </motion.div>
+            brand={brand}
+            setBrand={setBrand}
+            onSubmit={runFresh}
+          />
         ) : (
-          <motion.div
+          <ResultsView
             key="results"
-            initial={{ opacity: 0, scale: 0.98, y: 12, filter: "blur(8px)" }}
-            animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.55, ease: easeOut, delay: 0.05 }}
-          >
-            <ResultsView
-              brand={activeBrand}
-              states={states}
-              triggered={triggered}
-              onReset={reset}
-              onUnlockVideo={unlockVideo}
-            />
-          </motion.div>
+            brand={activeBrand}
+            states={states}
+            triggered={triggered}
+            onReset={reset}
+            onUnlockVideo={unlockVideo}
+          />
         )}
       </AnimatePresence>
     </div>
@@ -206,35 +198,55 @@ function FormView({
   setBrand: (b: string) => void;
   onSubmit: (b: string) => void;
 }) {
+  const trimmed = brand.trim();
+
   return (
-    <div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.25 }}
+      className="max-w-3xl mx-auto"
+    >
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          onSubmit(brand);
+          if (trimmed) onSubmit(trimmed);
         }}
         className="flex flex-col sm:flex-row gap-3"
       >
-        <input
-          type="text"
-          value={brand}
-          onChange={(e) => setBrand(e.target.value)}
-          placeholder="Type a brand name (e.g. Bvlgari)"
-          maxLength={50}
-          className="flex-1 rounded-xl bg-zinc-900 border border-zinc-800 px-5 py-4 text-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
-        />
-        <button
+        <div className="relative flex-1">
+          <input
+            type="text"
+            value={brand}
+            onChange={(e) => setBrand(e.target.value)}
+            placeholder="Type a brand name (e.g. Bvlgari)"
+            maxLength={50}
+            className="w-full rounded-xl bg-zinc-900 border border-zinc-800 px-5 py-4 text-lg text-transparent placeholder:text-zinc-500 caret-fuchsia-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
+          />
+          {brand.length > 0 && (
+            <motion.span
+              layoutId="brand-text"
+              transition={layoutTransition}
+              className="absolute inset-0 px-5 py-4 text-lg font-medium text-gradient pointer-events-none flex items-center truncate"
+            >
+              {brand}
+            </motion.span>
+          )}
+        </div>
+        <motion.button
+          layoutId="primary-cta"
+          transition={layoutTransition}
           type="submit"
-          disabled={brand.trim().length === 0}
-          className="rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-violet-500/30 transition hover:shadow-violet-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-violet-500/30 transition-shadow hover:shadow-violet-500/50"
         >
-          Test it free
-        </button>
+          <motion.span layout="position">Test it free</motion.span>
+        </motion.button>
       </form>
       <p className="mt-4 text-center text-xs text-zinc-500">
         ✓ No signup &nbsp; ✓ Voice tests free &nbsp; ✓ 4 voice + 4 video models
       </p>
-    </div>
+    </motion.div>
   );
 }
 
@@ -251,37 +263,62 @@ function ResultsView({
   onReset: () => void;
   onUnlockVideo: () => void;
 }) {
+  const showUnlock = !triggered.video;
+
   return (
-    <div className="rounded-3xl border border-zinc-800 bg-zinc-950/70 backdrop-blur-sm shadow-[0_30px_90px_-30px_rgba(168,85,247,0.4)] p-6 sm:p-8">
-      <motion.header
-        variants={sectionVariants}
-        initial="hidden"
-        animate="show"
-        className="flex items-start justify-between gap-4 mb-8"
-      >
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.25 }}
+      className="rounded-3xl border border-zinc-800 bg-zinc-950/70 backdrop-blur-sm shadow-[0_30px_90px_-30px_rgba(168,85,247,0.4)] p-6 sm:p-8"
+    >
+      <header className="flex items-center justify-between gap-4 mb-10 flex-wrap">
         <div className="min-w-0">
           <p className="text-[11px] uppercase tracking-widest text-fuchsia-400">
             Testing
           </p>
-          <h2 className="mt-1 text-3xl sm:text-5xl font-bold tracking-tight text-white truncate">
-            <span className="text-gradient">{brand}</span>
-          </h2>
+          <motion.h2
+            layoutId="brand-text"
+            transition={layoutTransition}
+            className="mt-1 text-4xl sm:text-6xl font-bold tracking-tight text-gradient truncate"
+          >
+            {brand}
+          </motion.h2>
         </div>
-        <button
-          onClick={onReset}
-          className="shrink-0 inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/60 hover:border-zinc-700 hover:bg-zinc-900 px-3.5 py-2 text-xs text-zinc-300 transition"
+
+        <motion.button
+          layoutId="primary-cta"
+          transition={layoutTransition}
+          onClick={showUnlock ? onUnlockVideo : onReset}
+          className={
+            showUnlock
+              ? "rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/30 transition-shadow hover:shadow-violet-500/50"
+              : "rounded-full border border-zinc-800 bg-zinc-900/60 hover:border-zinc-700 hover:bg-zinc-900 px-3.5 py-2 text-xs text-zinc-300 transition-colors"
+          }
         >
-          <ArrowLeftIcon />
-          New test
-        </button>
-      </motion.header>
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.span
+              key={showUnlock ? "unlock" : "new"}
+              layout="position"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.25, ease: easeOut }}
+              className="inline-block whitespace-nowrap"
+            >
+              {showUnlock ? "Unlock Full test" : "← New test"}
+            </motion.span>
+          </AnimatePresence>
+        </motion.button>
+      </header>
 
       <motion.section
         variants={sectionVariants}
         initial="hidden"
         animate="show"
+        transition={{ delay: 0.15 }}
         className="mb-12"
-        transition={{ delay: 0.1 }}
       >
         <TierHeader tier="tts" />
         <motion.div
@@ -302,7 +339,7 @@ function ResultsView({
         variants={sectionVariants}
         initial="hidden"
         animate="show"
-        transition={{ delay: 0.2 }}
+        transition={{ delay: 0.3 }}
       >
         <TierHeader tier="video" locked={!triggered.video} />
 
@@ -320,10 +357,10 @@ function ResultsView({
             ))}
           </motion.div>
         ) : (
-          <LockedVideoTier onUnlock={onUnlockVideo} />
+          <LockedVideoTier />
         )}
       </motion.section>
-    </div>
+    </motion.div>
   );
 }
 
@@ -347,96 +384,57 @@ function TierHeader({
         </h3>
         <span className="text-xs text-zinc-500">~{maxEta}s</span>
       </div>
-      <p className="text-sm text-zinc-500 mt-1">{meta.subtitle}</p>
+      <p className="text-sm text-zinc-500 mt-1">
+        {locked ? (
+          <>
+            Don&apos;t let AI choose for you. See how 4 AI spokespersons say
+            your brand on camera —{" "}
+            <span className="text-zinc-300">use the unlock button above</span>.
+          </>
+        ) : (
+          meta.subtitle
+        )}
+      </p>
     </div>
   );
 }
 
-function LockedVideoTier({ onUnlock }: { onUnlock: () => void }) {
+function LockedVideoTier() {
   const models = TIERS_META.video;
 
   return (
-    <div className="relative">
-      <motion.div
-        variants={gridVariants}
-        initial="hidden"
-        animate="show"
-        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 pointer-events-none select-none"
-      >
-        {models.map((m) => (
-          <motion.div key={m.id} variants={cardVariants}>
-            <LockedVideoPlaceholder model={m} />
-          </motion.div>
-        ))}
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, ease: easeOut, delay: 0.4 }}
-        className="absolute inset-0 flex items-center justify-center p-4"
-      >
-        <div className="w-full max-w-md rounded-2xl border border-violet-500/40 bg-zinc-950/95 backdrop-blur-md p-6 sm:p-7 text-center shadow-[0_20px_60px_-15px_rgba(168,85,247,0.6)]">
-          <div className="inline-flex items-center gap-2 rounded-full border border-violet-400/30 bg-violet-500/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-violet-200">
-            <LockIcon className="w-3 h-3" />
-            Pro test · 9,90€
-          </div>
-          <h4 className="mt-4 text-2xl sm:text-3xl font-bold text-white leading-tight">
-            Don&apos;t let AI choose for you.
-          </h4>
-          <p className="mt-3 text-sm text-zinc-400 leading-relaxed">
-            Your brand will live in AI ads, UGC and product videos. See how
-            Veo, Seedance, Kling and Happy Horse say it on camera —{" "}
-            <span className="text-zinc-200 font-medium">
-              with native lip-sync
-            </span>{" "}
-            — before you spend on production.
-          </p>
-          <button
-            onClick={onUnlock}
-            className="mt-5 w-full rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 px-6 py-3.5 text-sm sm:text-base font-semibold text-white shadow-lg shadow-violet-500/30 transition hover:shadow-violet-500/50"
-          >
-            Unlock 4 video spokespersons — 9,90€
-          </button>
-          <p className="mt-3 text-[10px] uppercase tracking-widest text-zinc-600">
-            Free preview during launch
-          </p>
-        </div>
-      </motion.div>
-    </div>
+    <motion.div
+      variants={gridVariants}
+      initial="hidden"
+      animate="show"
+      className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+    >
+      {models.map((m) => (
+        <motion.div key={m.id} variants={cardVariants}>
+          <LockedVideoPlaceholder model={m} />
+        </motion.div>
+      ))}
+    </motion.div>
   );
 }
 
 function LockedVideoPlaceholder({ model }: { model: ModelMeta }) {
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5 opacity-60">
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
       <div className="flex items-center gap-2 text-sm text-zinc-400">
         <span className="text-base">{model.flag}</span>
         <span>{model.provider}</span>
       </div>
       <div className="mt-1 font-semibold text-zinc-300">{model.name}</div>
       <div className="mt-4 relative aspect-video rounded-lg overflow-hidden border border-zinc-800 bg-gradient-to-br from-zinc-800/40 via-violet-900/15 to-fuchsia-900/15">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(168,85,247,0.08),_transparent_70%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(168,85,247,0.10),_transparent_70%)]" />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="rounded-full border border-zinc-700/80 bg-zinc-950/70 backdrop-blur-sm p-2.5">
+            <LockIcon className="w-4 h-4 text-zinc-400" />
+          </div>
+        </div>
       </div>
     </div>
-  );
-}
-
-function ArrowLeftIcon() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <line x1="19" y1="12" x2="5" y2="12" />
-      <polyline points="12 19 5 12 12 5" />
-    </svg>
   );
 }
 
