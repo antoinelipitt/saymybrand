@@ -164,25 +164,47 @@ export function TestSection({ initialBrand }: { initialBrand?: string }) {
 
   return (
     <div id="test" className="w-full max-w-5xl mx-auto px-6">
-      <AnimatePresence initial={false} mode="popLayout">
-        {!activeBrand ? (
-          <FormView
-            key="form"
-            brand={brand}
-            setBrand={setBrand}
-            onSubmit={runFresh}
-          />
-        ) : (
-          <ResultsView
-            key="results"
-            brand={activeBrand}
-            states={states}
-            triggered={triggered}
-            onReset={reset}
-            onUnlockVideo={unlockVideo}
-          />
-        )}
-      </AnimatePresence>
+      <div className="relative min-h-[150px]">
+        <AnimatePresence initial={false}>
+          {!activeBrand && (
+            <motion.div
+              key="form"
+              initial={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="absolute inset-x-0 top-0"
+            >
+              <div className="max-w-3xl mx-auto">
+                <FormView
+                  brand={brand}
+                  setBrand={setBrand}
+                  onSubmit={runFresh}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence initial={false}>
+          {activeBrand && (
+            <motion.div
+              key="results"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <ResultsView
+                brand={activeBrand}
+                states={states}
+                triggered={triggered}
+                onReset={reset}
+                onUnlockVideo={unlockVideo}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
@@ -199,13 +221,7 @@ function FormView({
   const trimmed = brand.trim();
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.25 }}
-      className="max-w-3xl mx-auto"
-    >
+    <div>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -244,7 +260,7 @@ function FormView({
       <p className="mt-4 text-center text-xs text-zinc-500">
         ✓ No signup &nbsp; ✓ Voice tests free &nbsp; ✓ 4 voice + 4 video models
       </p>
-    </motion.div>
+    </div>
   );
 }
 
@@ -264,13 +280,7 @@ function ResultsView({
   const showUnlock = !triggered.video;
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.25 }}
-      className="rounded-3xl border border-zinc-800 bg-zinc-950/70 backdrop-blur-sm shadow-[0_30px_90px_-30px_rgba(168,85,247,0.4)] p-6 sm:p-8"
-    >
+    <div className="rounded-3xl border border-zinc-800 bg-zinc-950/70 backdrop-blur-sm shadow-[0_30px_90px_-30px_rgba(168,85,247,0.4)] p-6 sm:p-8">
       <header className="flex items-start justify-between gap-4 mb-10">
         <div className="min-w-0">
           <p className="text-[11px] uppercase tracking-widest text-fuchsia-400">
@@ -358,7 +368,7 @@ function ResultsView({
           <LockedVideoTier />
         )}
       </motion.section>
-    </motion.div>
+    </div>
   );
 }
 
