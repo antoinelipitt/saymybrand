@@ -212,11 +212,11 @@ function ResultsModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/55 backdrop-blur-md flex items-center justify-center p-3 sm:p-8"
+      className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center p-3 sm:p-8"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-5xl max-h-[88vh] overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950 shadow-[0_30px_90px_-20px_rgba(168,85,247,0.45)] flex flex-col"
+        className="relative w-full max-w-4xl max-h-[82vh] overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950 shadow-[0_40px_100px_-15px_rgba(168,85,247,0.5),0_0_0_1px_rgba(168,85,247,0.15)] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="shrink-0 flex items-center justify-between gap-4 border-b border-zinc-900 bg-zinc-950/95 backdrop-blur px-6 py-4">
