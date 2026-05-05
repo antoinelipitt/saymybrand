@@ -63,6 +63,30 @@ const cardVariants: Variants = {
 
 const layoutTransition = { duration: 0.55, ease: easeOut };
 
+function smoothScrollToId(id: string, offset: number, duration: number) {
+  if (typeof window === "undefined") return;
+  const el = document.getElementById(id);
+  if (!el) return;
+
+  const targetY = el.getBoundingClientRect().top + window.scrollY - offset;
+  const startY = window.scrollY;
+  const distance = targetY - startY;
+  if (Math.abs(distance) < 2) return;
+
+  const startTime = performance.now();
+  const easeInOutCubic = (t: number) =>
+    t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+  const step = (now: number) => {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    window.scrollTo(0, startY + distance * easeInOutCubic(progress));
+    if (progress < 1) requestAnimationFrame(step);
+  };
+
+  requestAnimationFrame(step);
+}
+
 export function TestSection({ initialBrand }: { initialBrand?: string }) {
   const [brand, setBrand] = useState(initialBrand ?? "");
   const [activeBrand, setActiveBrand] = useState<string | null>(null);
@@ -165,9 +189,7 @@ export function TestSection({ initialBrand }: { initialBrand?: string }) {
   useEffect(() => {
     if (!activeBrand || typeof window === "undefined") return;
     const id = requestAnimationFrame(() => {
-      document
-        .getElementById("test")
-        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      smoothScrollToId("test", 96, 900);
     });
     return () => cancelAnimationFrame(id);
   }, [activeBrand]);
@@ -545,11 +567,7 @@ function ResultCard({
       ) : (
         <div className="mt-4 min-h-[60px] flex items-center">
           {state?.result?.mediaUrl ? (
-            <audio
-              controls
-              src={state.result.mediaUrl}
-              className="w-full [&::-webkit-media-controls-panel]:bg-zinc-800"
-            />
+            <AudioPlayer src={state.result.mediaUrl} />
           ) : state?.error ? (
             <div className="w-full text-xs text-red-400 break-words">
               {state.error}
@@ -567,6 +585,82 @@ function ResultCard({
         </div>
       )}
     </div>
+  );
+}
+
+function AudioPlayer({ src }: { src: string }) {
+  const [playing, setPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const toggle = async () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playing) {
+      audio.pause();
+      return;
+    }
+    try {
+      await audio.play();
+    } catch {
+      // ignore autoplay rejections
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-3 w-full">
+      <audio
+        ref={audioRef}
+        src={src}
+        preload="none"
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onEnded={() => setPlaying(false)}
+      />
+      <button
+        type="button"
+        onClick={toggle}
+        aria-label={playing ? "Pause" : "Play"}
+        className={`shrink-0 flex items-center justify-center w-10 h-10 rounded-full transition ${
+          playing
+            ? "bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-lg shadow-violet-500/40"
+            : "bg-zinc-800 hover:bg-zinc-700 text-zinc-200 ring-1 ring-inset ring-zinc-700 hover:ring-zinc-600"
+        }`}
+      >
+        {playing ? <PauseIcon /> : <PlayIcon />}
+      </button>
+      <span className="text-xs text-zinc-500 truncate">
+        {playing ? "Playing…" : "Tap to listen"}
+      </span>
+    </div>
+  );
+}
+
+function PlayIcon() {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden
+    >
+      <path d="M8 5.14v13.72L19 12 8 5.14z" />
+    </svg>
+  );
+}
+
+function PauseIcon() {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden
+    >
+      <rect x="6" y="5" width="4" height="14" rx="1" />
+      <rect x="14" y="5" width="4" height="14" rx="1" />
+    </svg>
   );
 }
 
