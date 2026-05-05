@@ -574,9 +574,6 @@ function ResultCard({
         <AudioBar
           src={state?.result?.mediaUrl ?? null}
           progress={progress}
-          elapsedSec={elapsedSec}
-          estimatedSec={model.estimatedSeconds}
-          loading={isLoading}
         />
       )}
     </div>
@@ -586,15 +583,9 @@ function ResultCard({
 function AudioBar({
   src,
   progress,
-  elapsedSec,
-  estimatedSec,
-  loading,
 }: {
   src: string | null;
   progress: number;
-  elapsedSec: number;
-  estimatedSec: number;
-  loading: boolean;
 }) {
   const [playing, setPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -620,8 +611,6 @@ function AudioBar({
   const audioProgress =
     duration > 0 ? Math.min((currentTime / duration) * 100, 100) : 0;
   const displayProgress = ready ? audioProgress : progress;
-
-  const overrun = elapsedSec > estimatedSec;
 
   return (
     <div className="mt-3">
@@ -673,48 +662,8 @@ function AudioBar({
           />
         </div>
       </div>
-
-      <div className="mt-1.5 h-3 flex items-center justify-between text-[10px] text-zinc-500 leading-none">
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.span
-            key={ready ? "audio-cur" : "loading-pct"}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            {ready
-              ? formatTime(currentTime)
-              : loading
-                ? `${Math.round(progress)}%`
-                : "Queued…"}
-          </motion.span>
-        </AnimatePresence>
-
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.span
-            key={ready ? "audio-dur" : "loading-eta"}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className={overrun && !ready ? "text-amber-400" : ""}
-          >
-            {ready
-              ? formatTime(duration)
-              : `${elapsedSec}s / ~${estimatedSec}s`}
-          </motion.span>
-        </AnimatePresence>
-      </div>
     </div>
   );
-}
-
-function formatTime(sec: number): string {
-  if (!isFinite(sec) || sec < 0) return "0:00";
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60);
-  return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
 function PlayIcon() {
