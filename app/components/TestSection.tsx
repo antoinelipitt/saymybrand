@@ -632,27 +632,38 @@ function AudioBar({
       )}
 
       <div className="flex items-center gap-2.5">
-        <AnimatePresence initial={false}>
-          {ready && (
-            <motion.button
-              key="play-btn"
-              type="button"
-              onClick={toggle}
-              aria-label={playing ? "Pause" : "Play"}
-              initial={{ opacity: 0, width: 0, marginRight: -10 }}
-              animate={{ opacity: 1, width: 28, marginRight: 0 }}
-              exit={{ opacity: 0, width: 0, marginRight: -10 }}
-              transition={{ duration: 0.4, ease: easeOut }}
-              className={`shrink-0 flex items-center justify-center h-7 rounded-full transition-colors ${
-                playing
-                  ? "bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white"
-                  : "bg-zinc-800 hover:bg-zinc-700 text-zinc-200 ring-1 ring-inset ring-zinc-700"
-              }`}
+        <button
+          type="button"
+          onClick={ready ? toggle : undefined}
+          disabled={!ready}
+          aria-label={ready ? (playing ? "Pause" : "Play") : "Generating audio"}
+          className={`shrink-0 flex items-center justify-center w-7 h-7 rounded-full transition-colors ${
+            !ready
+              ? "bg-zinc-800 text-zinc-400 ring-1 ring-inset ring-zinc-700/60 cursor-default"
+              : playing
+                ? "bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white"
+                : "bg-zinc-800 hover:bg-zinc-700 text-zinc-200 ring-1 ring-inset ring-zinc-700 cursor-pointer"
+          }`}
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span
+              key={!ready ? "loader" : playing ? "pause" : "play"}
+              initial={{ opacity: 0, scale: 0.6 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.6 }}
+              transition={{ duration: 0.18, ease: easeOut }}
+              className="flex"
             >
-              {playing ? <PauseIcon /> : <PlayIcon />}
-            </motion.button>
-          )}
-        </AnimatePresence>
+              {!ready ? (
+                <SpinnerIcon />
+              ) : playing ? (
+                <PauseIcon />
+              ) : (
+                <PlayIcon />
+              )}
+            </motion.span>
+          </AnimatePresence>
+        </button>
 
         <div className="flex-1 h-1.5 rounded-full bg-zinc-800 overflow-hidden">
           <motion.div
@@ -663,6 +674,34 @@ function AudioBar({
         </div>
       </div>
     </div>
+  );
+}
+
+function SpinnerIcon() {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      className="animate-spin"
+      aria-hidden
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="9"
+        stroke="currentColor"
+        strokeOpacity="0.25"
+        strokeWidth="2.5"
+      />
+      <path
+        d="M21 12a9 9 0 0 1-9 9"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }
 
