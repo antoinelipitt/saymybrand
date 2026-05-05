@@ -162,8 +162,18 @@ export function TestSection({ initialBrand }: { initialBrand?: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialBrand]);
 
+  useEffect(() => {
+    if (!activeBrand || typeof window === "undefined") return;
+    const id = requestAnimationFrame(() => {
+      document
+        .getElementById("test")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [activeBrand]);
+
   return (
-    <div id="test" className="w-full max-w-5xl mx-auto px-6">
+    <div id="test" className="w-full max-w-5xl mx-auto px-6 scroll-mt-24">
       <div className="relative min-h-[150px]">
         <AnimatePresence initial={false}>
           {!activeBrand && (
@@ -428,13 +438,13 @@ function LockedVideoTier() {
 
 function LockedVideoPlaceholder({ model }: { model: ModelMeta }) {
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5 min-h-[260px] flex flex-col">
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
       <div className="flex items-center gap-2 text-sm text-zinc-400">
         <span className="text-base">{model.flag}</span>
         <span>{model.provider}</span>
       </div>
       <div className="mt-1 font-semibold text-zinc-300">{model.name}</div>
-      <div className="mt-4 flex-1 relative rounded-lg overflow-hidden border border-zinc-800 bg-gradient-to-br from-zinc-800/40 via-violet-900/15 to-fuchsia-900/15">
+      <div className="mt-4 relative aspect-video rounded-lg overflow-hidden border border-zinc-800 bg-gradient-to-br from-zinc-800/40 via-violet-900/15 to-fuchsia-900/15">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(168,85,247,0.10),_transparent_70%)]" />
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="rounded-full border border-zinc-700/80 bg-zinc-950/70 backdrop-blur-sm p-2.5">
@@ -500,47 +510,62 @@ function ResultCard({
   const isVideo = model.type === "video";
 
   return (
-    <div
-      className={`rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 h-full flex flex-col ${
-        isVideo ? "min-h-[260px]" : "min-h-[150px]"
-      }`}
-    >
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 h-full">
       <div className="flex items-center gap-2 text-sm text-zinc-400">
         <span className="text-base">{model.flag}</span>
         <span>{model.provider}</span>
       </div>
       <div className="mt-1 font-semibold text-zinc-100">{model.name}</div>
 
-      <div className="mt-4 flex-1 flex items-center">
-        {state?.result?.mediaUrl ? (
-          state.result.type === "video" ? (
+      {isVideo ? (
+        <div className="mt-4 relative aspect-video rounded-lg overflow-hidden border border-zinc-800 bg-zinc-950">
+          {state?.result?.mediaUrl ? (
             <video
               controls
               src={state.result.mediaUrl}
-              className="w-full rounded-lg bg-black aspect-video"
+              className="absolute inset-0 w-full h-full"
             />
+          ) : state?.error ? (
+            <div className="absolute inset-0 flex items-center justify-center p-3 text-xs text-red-400 text-center break-words">
+              {state.error}
+            </div>
           ) : (
+            <div className="absolute inset-0 flex items-center justify-center px-5">
+              <div className="w-full max-w-[220px]">
+                <ProgressBar
+                  progress={progress}
+                  elapsedSec={elapsedSec}
+                  estimatedSec={model.estimatedSeconds}
+                  loading={isLoading}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="mt-4 min-h-[60px] flex items-center">
+          {state?.result?.mediaUrl ? (
             <audio
               controls
               src={state.result.mediaUrl}
               className="w-full [&::-webkit-media-controls-panel]:bg-zinc-800"
             />
-          )
-        ) : state?.error ? (
-          <div className="w-full text-xs text-red-400 break-words">
-            {state.error}
-          </div>
-        ) : (
-          <div className="w-full">
-            <ProgressBar
-              progress={progress}
-              elapsedSec={elapsedSec}
-              estimatedSec={model.estimatedSeconds}
-              loading={isLoading}
-            />
-          </div>
-        )}
-      </div>
+          ) : state?.error ? (
+            <div className="w-full text-xs text-red-400 break-words">
+              {state.error}
+            </div>
+          ) : (
+            <div className="w-full">
+              <ProgressBar
+                progress={progress}
+                elapsedSec={elapsedSec}
+                estimatedSec={model.estimatedSeconds}
+                loading={isLoading}
+              />
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
