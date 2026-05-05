@@ -115,7 +115,7 @@ function HowItWorks() {
     {
       num: "03",
       title: "Decide",
-      body: "Use the ones that get it right. Avoid the ones that don't. Or rename before going live.",
+      body: "Use only the ones that get it right. Or rename before going live.",
     },
   ];
 
